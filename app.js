@@ -1,7 +1,7 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 const $=id=>document.getElementById(id), schema='witches_desk';
 let client,user,book,chapter,scene,books=[],chapters=[],scenes=[],characters=[],notes=[],timer,loading=false,dirty=false;
-const cfgKey='witches-desk-config-v1', draftKey=id=>'witches-desk-draft-'+id;
+const cfgKey='witches-desk-config-v1', defaultConfig={url:'https://pqifpislzljilqatmtly.supabase.co',key:'sb_publishable_16wAhIyuMsClbOYoAZt6aQ_unXWTJ_n'}, draftKey=id=>'witches-desk-draft-'+id;
 function show(id){for(const x of ['setup','auth','workspace'])$(x).hidden=x!==id}
 function status(s){$('status').textContent=s}
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
@@ -9,7 +9,7 @@ function safeText(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<
 function db(table){return client.schema(schema).from(table)}
 async function query(p){const {data,error}=await p;if(error)throw error;return data}
 function error(e){console.error(e);status('Error');toast(e.message||String(e))}
-function init(){const c=JSON.parse(localStorage.getItem(cfgKey)||'null');if(!c){show('setup');return}client=createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true}});client.auth.onAuthStateChange((_event,s)=>{user=s?.user||null;if(!user){show('auth');$('signout').hidden=true}else{$('signout').hidden=false;show('workspace');loadBooks().catch(error)}});client.auth.getSession().then(({data})=>{if(!data.session)show('auth')}).catch(error)}
+function init(){const c=JSON.parse(localStorage.getItem(cfgKey)||'null')||defaultConfig;if(!c){show('setup');return}client=createClient(c.url,c.key,{auth:{persistSession:true,autoRefreshToken:true}});client.auth.onAuthStateChange((_event,s)=>{user=s?.user||null;if(!user){show('auth');$('signout').hidden=true}else{$('signout').hidden=false;show('workspace');loadBooks().catch(error)}});client.auth.getSession().then(({data})=>{if(!data.session)show('auth')}).catch(error)}
 $('configForm').onsubmit=e=>{e.preventDefault();const url=$('url').value.trim(),key=$('key').value.trim();if(!url.startsWith('https://')||!key)return;localStorage.setItem(cfgKey,JSON.stringify({url,key}));init()};
 $('authForm').onsubmit=async e=>{e.preventDefault();try{await queryAuth(client.auth.signInWithPassword({email:$('email').value,password:$('password').value}))}catch(e){$('authMessage').textContent=e.message}};
 $('signup').onclick=async()=>{try{await queryAuth(client.auth.signUp({email:$('email').value,password:$('password').value}));$('authMessage').textContent='Account created. Check your email for confirmation if required.'}catch(e){$('authMessage').textContent=e.message}};
