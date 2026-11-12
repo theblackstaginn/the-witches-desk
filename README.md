@@ -1,28 +1,52 @@
 # The Witch's Desk
 
-Private, manuscript-first writing workspace. Initial build uses a neutral system UI; themed design comes after functionality.
+A private, manuscript-first writing and story-development workspace built for long-form fiction.
+
+## Current v1 feature set
+
+### Writing
+- Manuscripts → chapters → scenes
+- Autosave with local crash/offline draft recovery
+- Scene title, word count, manuscript word count, and POV assignment
+- Undo/redo, bold, italic, underline, strikethrough, lists, headings, blockquotes, and alignment
+- Scene-level find and replace
+- Keyboard save shortcut
+- Chapter and scene reordering
+- Rename/delete controls with destructive-action confirmation
+
+### Story development
+- Persistent characters
+- Story Grimoire with dedicated records for Settings, Items, Plotlines, and Lore
+- Grimoire filtering
+- General manuscript notes
+- Manuscript-wide search across scenes, chapters, notes, characters, and Grimoire entries
+
+### Manuscript protection
+- Supabase authentication with persistent sessions
+- Isolated `witches_desk` PostgreSQL schema
+- Per-user Row Level Security on all writing/worldbuilding tables
+- Manual scene revision checkpoints
+- Revision history with safe restore (the current version is checkpointed before restoration)
+- Browser-local recovery drafts
+- Complete JSON project backup
+- Unsaved-change navigation warning
+
+### Export
+- Current scene as HTML or plain text
+- Full manuscript as HTML or plain text
+- Print-ready manuscript view for browser Print / Save PDF
+- Complete JSON backup including manuscript structure, worldbuilding, notes, characters, and revisions
 
 ## Architecture
-- Static HTML/CSS/JavaScript frontend
+- Static HTML/CSS/JavaScript frontend deployed with GitHub Pages
 - Supabase Auth + PostgreSQL
-- Isolated `witches_desk` schema in the existing Quest Board project
-- Per-user RLS on all six writing tables
-- Chapter/scene editor, autosave, local recovery draft, POV selection, character notes, manual revision checkpoints
-
-## Setup
-1. In Supabase Dashboard > Project Settings > API > Exposed schemas, add `witches_desk` **without removing existing schemas**.
-2. Deploy these static files (e.g. GitHub Pages). Do not put a service-role key in the browser.
-3. On first launch, enter the project URL and **publishable** client key. These are stored in this browser's localStorage.
-4. Sign in with a Supabase Auth user. If email confirmation is enabled, confirm the email before signing in.
-
-## Current limits
-- This is an initial functional editor, **not** a Microsoft Word replacement.
-- Rich text uses native contenteditable / execCommand for the first iteration. Replace with a robust structured editor (e.g. Tiptap) before production manuscript writing.
-- Export currently saves the selected scene as HTML, not DOCX/PDF/EPUB.
-- Revisions are manual snapshots; revision restore UI is not implemented.
-- Offline recovery is local draft protection, not a full offline sync queue.
-- Character and note editing are basic; scene reorder, manuscript-wide search, backup and accessibility QA remain future work.
-- Private schemas and RLS protect database rows, but the app still shares a Supabase project/Auth configuration with Quest Board. Test RLS with separate accounts before real manuscripts are stored.
+- Publishable browser key only; no service-role or secret key is shipped to the client
+- Dedicated `witches_desk.world_entries` data model for worldbuilding instead of encoding Grimoire content into notes
 
 ## Security
-Do not publish secret keys. Schema access and ownership policies must be verified with real signed-in sessions. Do not modify existing Quest Board functions or tables without a separate audit.
+All Witch's Desk tables use RLS and owner-scoped policies for authenticated users. The app intentionally shares the existing Quest Board Supabase project while keeping writing data in its own schema.
+
+Do not place secret keys, service-role keys, database passwords, or private credentials in frontend files.
+
+## Deliberate v1 boundaries
+The application is now a complete practical writing environment, but it is not a literal Microsoft Word clone. The editor remains browser-native `contenteditable` rather than a structured editor engine such as Tiptap/ProseMirror. DOCX and EPUB are not generated natively; PDF is provided through the browser's print/PDF pipeline. These are appropriate future upgrades if Jess eventually needs publisher-facing interchange formats beyond the current HTML/TXT/PDF/JSON workflow.
