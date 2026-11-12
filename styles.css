@@ -384,18 +384,20 @@ body:before,body:after{display:none}
   background:#efdbb4;
   box-shadow:0 14px 45px rgba(0,0,0,.52);
 }
-/* Rotate only the decorative sheet, never the words or text cursor. */
+/* Genuine Lace & Leather Arcane Parchment Light Vol. 1.
+   Keep its original texture proportions and let the manuscript scroll above it. */
 .parchmentFrame::before{
   content:"";
   position:absolute;
   z-index:0;
-  top:50%;
-  left:50%;
-  width:100cqh;
-  height:100cqw;
-  transform:translate(-50%,-50%) rotate(90deg);
-  transform-origin:center;
-  background:url("./assets/parchment/parchment-editor.png") center / 100% 100% no-repeat;
+  inset:0;
+  width:100%;
+  height:100%;
+  transform:none;
+  background-image:url("./assets/Parchment_Light_Vol_1_01.jpg");
+  background-position:center center;
+  background-repeat:no-repeat;
+  background-size:cover;
   pointer-events:none;
 }
 .parchmentFrame #editor{
