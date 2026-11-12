@@ -845,3 +845,220 @@ body:before,body:after{display:none}
 @media(prefers-reduced-motion:reduce){
   .leftRail,.rightRail{transition:none}
 }
+
+
+/* Installed iPhone app: safe-area dialogs and compact worldbuilding flow */
+/* The Back link belongs to the installed-app editor flow, not desktop or Safari. */
+.grimoireEditNav{display:none}
+@media(max-width:760px){
+  html.installedWebApp dialog[open]{
+    position:fixed;
+    inset:max(60px, calc(env(safe-area-inset-top, 0px) + 10px))
+          10px
+          max(14px, env(safe-area-inset-bottom, 0px))
+          10px;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    width:auto;
+    height:auto;
+    min-height:0;
+    max-width:none;
+    max-height:none;
+    margin:0;
+    overflow:hidden;
+    border-radius:14px;
+    overscroll-behavior:contain;
+    background:rgba(27,11,38,.97);
+  }
+  html.installedWebApp dialog:not([open]){display:none}
+  html.installedWebApp dialog[open] > .dialogHead,
+  html.installedWebApp dialog[open] > .grimoireHead{
+    flex:0 0 auto;
+    min-width:0;
+    padding:13px 16px 12px;
+    align-items:flex-start;
+    gap:12px;
+    background:linear-gradient(130deg,rgba(59,23,76,.98),rgba(23,10,36,.98));
+  }
+  html.installedWebApp dialog .dialogHead h2,
+  html.installedWebApp dialog .grimoireHead h2{
+    font-size:clamp(19px,5.4vw,23px);
+    line-height:1.15;
+    margin:4px 0 0;
+  }
+  html.installedWebApp dialog .grimoireHead p{
+    margin:5px 0 0;
+    font-size:12px;
+    line-height:1.3;
+  }
+  html.installedWebApp dialog .dialogHead > div,
+  html.installedWebApp dialog .grimoireHead > div{
+    min-width:0;flex:1;
+  }
+  html.installedWebApp dialog .dialogHead > button,
+  html.installedWebApp dialog .grimoireHead > button{
+    flex:0 0 44px;
+    width:44px;height:44px;
+    margin:0;
+    display:grid;place-items:center;
+    border-radius:10px;
+    border:1px solid rgba(218,160,225,.55);
+    background:rgba(84,32,114,.58);
+    color:#fff0f6;
+    font-size:23px;
+    line-height:1;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  html.installedWebApp dialog[open] > .dialogPad{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:16px;
+  }
+  html.installedWebApp #grimoireDialog > .grimoireTabs{
+    display:flex;
+    flex:0 0 auto;
+    flex-wrap:nowrap;
+    align-items:center;
+    gap:7px;
+    padding:9px 12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  html.installedWebApp #grimoireDialog > .grimoireTabs::-webkit-scrollbar{display:none}
+  html.installedWebApp #grimoireDialog .grimoireTabs button{
+    flex:0 0 auto;
+    min-height:40px;
+    padding:8px 12px;
+    font-size:14px;
+    touch-action:manipulation;
+  }
+  html.installedWebApp #grimoireDialog .grimoireBody{
+    display:flex;
+    flex:1 1 auto;
+    flex-direction:column;
+    gap:0;
+    min-height:0;
+    overflow:hidden;
+    padding:0;
+  }
+  html.installedWebApp #grimoireDialog .grimoireList{
+    display:flex;
+    flex:1 1 auto;
+    flex-direction:column;
+    gap:9px;
+    min-height:0;
+    padding:14px;
+    border:0;
+    overflow:hidden;
+  }
+  html.installedWebApp #grimoireDialog #newEntry{
+    flex:0 0 auto;
+    display:block;
+    width:100%;
+    min-height:46px;
+    margin:0;
+    padding:10px 12px;
+    text-align:center;
+    border-radius:9px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireFilter{
+    flex:0 0 auto;
+    display:block;
+    width:100%;
+    min-height:44px;
+    margin:0;
+    padding:9px 12px;
+    font-size:16px;
+    border-radius:9px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireEntries{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:4px 1px 20px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireEntries button{
+    min-height:46px;
+    padding:11px 14px;
+    margin-bottom:7px;
+    font-size:15px;
+    border-radius:9px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireForm{
+    display:none;
+    flex:1 1 auto;
+    min-width:0;
+    min-height:0;
+    width:100%;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:0 14px 18px;
+  }
+  html.installedWebApp #grimoireDialog.mobileEditing .grimoireList{display:none}
+  html.installedWebApp #grimoireDialog.mobileEditing #grimoireForm{display:block}
+  html.installedWebApp #grimoireDialog .grimoireEditNav{
+    position:sticky;
+    top:0;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    min-height:55px;
+    padding:7px 0;
+    margin:0 0 12px;
+    background:rgba(27,11,38,.98);
+    border-bottom:1px solid rgba(187,119,194,.28);
+  }
+  html.installedWebApp #grimoireDialog #backToGrimoireList{
+    flex:0 0 auto;
+    min-height:40px;
+    padding:8px 13px;
+    border-radius:8px;
+    background:rgba(80,34,107,.62);
+    border:1px solid rgba(210,150,222,.55);
+    font-size:14px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireEditLabel{
+    min-width:0;
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    color:#eed1ed;
+    font-size:14px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireForm label{
+    margin:0 0 14px;
+  }
+  html.installedWebApp #grimoireDialog #grimoireForm input,
+  html.installedWebApp #grimoireDialog #grimoireForm textarea{
+    width:100%;
+    margin-top:6px;
+    font-size:16px;
+    line-height:1.5;
+    border-radius:9px;
+  }
+  html.installedWebApp #grimoireDialog #entrySummary{min-height:100px}
+  html.installedWebApp #grimoireDialog #entryDetails{min-height:165px}
+  html.installedWebApp #grimoireDialog #grimoireForm .actions{
+    position:sticky;
+    bottom:0;
+    z-index:2;
+    flex-wrap:nowrap;
+    padding:12px 0 max(12px, env(safe-area-inset-bottom, 0px));
+    margin:0;
+    background:rgba(27,11,38,.98);
+  }
+  html.installedWebApp #grimoireDialog #grimoireForm .actions button{
+    flex:1;
+    min-width:0;
+    min-height:45px;
+  }
+}
