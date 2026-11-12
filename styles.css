@@ -618,3 +618,227 @@ body:before,body:after{display:none}
 .brand strong::before{content:none!important;display:none!important}
 @media(max-width:1080px){.brand strong{width:230px;height:62px}}
 @media(max-width:760px){.brand strong{width:190px;height:56px}}
+
+
+/* Witch's Desk mobile portrait writing room - 2026-11-12 */
+.mobileWriterTools,.mobileDrawerBackdrop{display:none}
+@media(max-width:760px){
+  :root{--mobileHead:116px}
+  html,body,#app{width:100%;height:100%;min-height:0}
+  body{
+    margin:0;overflow:hidden;
+    background:#130a1d!important;
+    -webkit-text-size-adjust:100%;
+  }
+  body::before{
+    content:"";
+    display:block!important;position:fixed;
+    inset:0;width:100%;height:100dvh;
+    opacity:1;filter:none;z-index:0;
+    pointer-events:none;
+    background:
+      linear-gradient(180deg,rgba(12,4,20,.30),rgba(18,6,29,.12) 48%,rgba(9,4,16,.32)),
+      url("./assets/CAAF364E-6836-41EF-8C79-9BFD64FBAD64.png") center center / cover no-repeat;
+  }
+  body::after{display:none!important}
+  .topbar{
+    height:var(--mobileHead);min-height:var(--mobileHead);max-height:var(--mobileHead);
+    display:flex;flex-wrap:wrap;align-content:space-between;align-items:center;
+    padding:5px 8px 0;gap:0;
+    background:rgba(18,8,29,.42)!important;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .brand{min-width:0;flex:1 1 auto;gap:0;height:51px;overflow:hidden}
+  .brand strong{
+    width:clamp(170px,50vw,238px)!important;height:49px!important;
+    max-width:100%;background-position:left center!important;
+  }
+  .headerActions{
+    flex:0 0 auto;margin-left:auto;
+    display:flex;align-items:center;gap:1px;height:51px;
+  }
+  .headerActions .iconButton{height:36px;width:30px;font-size:18px}
+  .syncPill{display:none}
+  .moduleNav{
+    order:3;flex:0 0 calc(100% + 16px);
+    height:57px;min-height:57px;width:calc(100% + 16px);
+    margin:0 -8px;align-self:auto;
+    overflow-x:auto;overflow-y:hidden;
+    justify-content:flex-start;
+    scrollbar-width:none;scroll-snap-type:x proximity;
+    background:rgba(21,10,35,.36);
+  }
+  .moduleNav::-webkit-scrollbar,.menuWords::-webkit-scrollbar{display:none}
+  .module{flex:0 0 66px;min-width:66px;scroll-snap-align:start;gap:3px;font-size:10px;padding:4px 3px;border-left-color:rgba(170,108,192,.22)}
+  .module span{width:22px;height:22px;background-size:contain}
+  .module.active{box-shadow:inset 0 0 0 1px rgba(219,145,245,.6)}
+  #workspace{
+    display:flex;
+    flex-direction:column;
+    width:100%;max-width:none;
+    height:calc(100dvh - var(--mobileHead));
+    min-height:0;margin:0;padding:0;
+    border:0;border-radius:0;box-shadow:none;
+    background:transparent!important;
+    overflow:hidden;
+  }
+  .mobileWriterTools{
+    position:relative;z-index:4;
+    display:flex;flex:0 0 46px;height:46px;
+    align-items:center;gap:6px;padding:4px 7px;
+    background:rgba(21,8,33,.40);
+    border-bottom:1px solid rgba(221,164,91,.50);
+  }
+  .mobileWriterTools button{
+    height:37px;min-width:38px;
+    padding:5px 8px;border-radius:7px;
+    border:1px solid rgba(225,171,105,.57);
+    background:rgba(45,16,67,.62);
+    color:#f7e8ed;
+    font-size:12px;
+    white-space:nowrap;
+    touch-action:manipulation;
+  }
+  .mobileWriterTools button[aria-expanded="true"]{
+    background:rgba(105,41,141,.80);border-color:#e2b0eb;
+  }
+  #mobileSceneLabel{
+    flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;text-align:center;
+    font-size:12px;color:#f4d4a5;
+  }
+  #mobileSaveScene{font-size:19px;font-weight:bold}
+  .editorShell{
+    display:grid;flex:1 1 auto;
+    width:100%;height:auto;min-height:0;
+    grid-template-rows:42px 37px 42px minmax(0,1fr) 30px;
+    overflow:hidden;
+    background:rgba(15,5,26,.22)!important;
+    border:0;border-radius:0;
+  }
+  .documentTabs{height:42px;padding:5px 6px 0;gap:5px;background:rgba(23,8,34,.38)}
+  .docTab,.docTab.sceneTab{height:37px;min-width:168px;max-width:min(72vw,260px);padding:7px 10px;font-size:13px}
+  .newTab{height:34px;min-width:36px;width:36px;font-size:20px}
+  .editorMenus{
+    height:37px;padding:0 5px;min-width:0;
+    background:rgba(21,9,34,.52)!important;
+  }
+  .menuWords{flex:1;min-width:0;gap:1px;overflow-x:auto;scrollbar-width:none}
+  .menuWords .menuTrigger{font-size:12px;padding:5px 7px;min-height:29px}
+  .focusMode{flex:0 0 auto;padding:5px 8px;font-size:11px;margin-left:5px;white-space:nowrap}
+  .fullscreenButton{flex:0 0 auto;font-size:16px;padding:2px 4px}
+  .toolbar{
+    height:42px;padding:4px 6px;gap:4px;
+    background:rgba(23,10,37,.51)!important;
+    overflow-x:auto;scrollbar-width:thin;
+  }
+  .toolbar button,.toolbar select{height:32px;min-height:32px;font-size:12px}
+  .formatSelect{width:105px}.fontSelect{width:106px}.sizeSelect{width:54px}
+  .paperStage{
+    display:flex;min-width:0;min-height:0;
+    overflow:hidden;padding:6px 7px 7px;
+    background:transparent!important;
+  }
+  .parchmentFrame{
+    position:relative;
+    width:100%;max-width:none;
+    height:100%;min-height:0;
+    overflow:hidden;background:#ecd7b4;
+    border:1px solid rgba(176,119,62,.43);
+    border-radius:3px;
+    box-shadow:0 9px 25px rgba(0,0,0,.35);
+  }
+  /* Original Parchment Light Vol. 1 is portrait on phones.
+     The desktop landscape transform remains untouched. */
+  .parchmentFrame::before{
+    inset:0;top:0;left:0;
+    width:100%;height:100%;
+    transform:none;
+    background:url("./assets/Parchment_Light_Vol_1_01.jpg") center center / cover no-repeat;
+  }
+  .parchmentFrame #editor{
+    min-height:0;height:100%;width:100%;
+    padding:clamp(24px,7vw,38px) clamp(22px,7vw,33px);
+    font-size:16px;line-height:1.63;
+    color:#271c15;
+    overflow-x:hidden;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
+    background:transparent!important;
+    cursor:text;
+  }
+  .statusBar{
+    height:30px;min-height:30px;gap:0;
+    font-size:10px;
+    background:rgba(22,8,35,.56)!important;
+    overflow-x:auto;
+  }
+  .statusBar>span{flex:0 0 auto;padding:0 9px}
+  .statusBar .savedState{margin-left:auto}
+  .leftRail,.rightRail{
+    display:block!important;
+    position:fixed;z-index:61;
+    top:var(--mobileHead);bottom:0;height:calc(100dvh - var(--mobileHead));
+    width:min(330px,87vw);max-width:87vw;
+    overflow:auto;overscroll-behavior:contain;
+    padding:13px 12px max(20px,env(safe-area-inset-bottom));
+    background:rgba(18,7,29,.76)!important;
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border:1px solid rgba(216,150,87,.65);
+    border-top:0;
+    box-shadow:0 12px 30px #0008;
+    visibility:hidden;pointer-events:none;
+    transition:transform .22s ease,visibility .22s;
+  }
+  .leftRail{
+    left:0;right:auto;border-left:0;border-radius:0 12px 12px 0;
+    transform:translateX(-105%);
+  }
+  .rightRail{
+    right:0;left:auto;border-right:0;border-radius:12px 0 0 12px;
+    transform:translateX(105%);
+  }
+  .leftRail.mobileOpen,.rightRail.mobileOpen{
+    visibility:visible;pointer-events:auto;transform:translateX(0);
+  }
+  #workspace.hideLeftRail .leftRail.mobileOpen,#workspace.hideRightRail .rightRail.mobileOpen{
+    visibility:visible;
+  }
+  .mobileDrawerBackdrop:not([hidden]){
+    display:block;position:fixed;z-index:60;
+    inset:var(--mobileHead) 0 0;
+    width:100%;height:calc(100dvh - var(--mobileHead));
+    border:0;background:rgba(4,2,12,.53);
+    -webkit-backdrop-filter:blur(2px);
+    backdrop-filter:blur(2px);
+  }
+  .inspectorCard,.railSection,.projectPicker{
+    background:rgba(41,17,58,.37)!important;
+    backdrop-filter:none;
+  }
+  .grimoireBody,.deskNotesLayout{grid-template-columns:1fr}
+  .grimoireList,.deskNotesIndex{
+    border-right:0;border-bottom:1px solid rgba(192,144,203,.3);
+    padding:0 0 14px;
+  }
+  .dialogHead,.grimoireHead{padding:15px 15px 12px;gap:10px}
+  .dialogHead h2,.grimoireHead h2{font-size:21px}
+  .dialogPad,.grimoireBody{padding:14px}
+  dialog{width:min(96vw,580px);max-height:calc(100dvh - 32px);border-radius:10px}
+  dialog input,dialog select,dialog textarea{max-width:100%;font-size:16px}
+  .exportGrid{grid-template-columns:1fr}
+  .deskMenu{max-height:60dvh}
+  #workspace.writingFocus{display:flex}
+  #workspace.writingFocus .editorShell{width:100%;grid-column:auto}
+}
+@media(max-width:380px){
+  .brand strong{width:165px!important}
+  .headerActions .iconButton{width:27px}
+  .mobileWriterTools button{font-size:11px;padding:5px 6px}
+  .menuWords .menuTrigger{padding:5px 6px}
+}
+@media(prefers-reduced-motion:reduce){
+  .leftRail,.rightRail{transition:none}
+}
