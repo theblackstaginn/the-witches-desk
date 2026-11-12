@@ -255,7 +255,7 @@ function renderCharacters(){
     b.onclick=()=>openGrimoireTo('characters',c.id);$('characters').append(b);
   });
 }
-$('addCharacter').onclick=()=>{if(!book)return;grimoireCategory='characters';grimoireSelected=null;grimoireOpen();$('entryName').focus()};
+$('addCharacter').onclick=()=>{if(!book)return;grimoireCategory='characters';grimoireSelected=null;grimoireOpen();setGrimoireMobileEditor(true);$('entryName').focus()};
 
 function renderNotes(){
   $('notes').replaceChildren();
@@ -365,6 +365,18 @@ function renderSearch(results,root){
 
 const grimoireCategories=['characters','settings','items','plotlines','lore'];
 let grimoireCategory='characters',grimoireSelected=null;
+function setGrimoireMobileEditor(editing){
+  const dialog=$('grimoireDialog');
+  const isMobile=window.matchMedia('(max-width:760px)').matches;
+  dialog.classList.toggle('mobileEditing',Boolean(editing&&isMobile));
+  if(isMobile){
+    const body=dialog.querySelector('.grimoireBody');
+    if(body)body.scrollTop=0;
+    if(editing)requestAnimationFrame(()=>{$('grimoireForm').scrollTop=0});
+  }
+}
+$('backToGrimoireList').onclick=()=>{setGrimoireMobileEditor(false);$('grimoireFilter').focus({preventScroll:true})};
+$('grimoireDialog').addEventListener('close',()=>setGrimoireMobileEditor(false));
 
 function grimoireRecords(){
   if(grimoireCategory==='characters')return characters.map(c=>({id:c.id,name:c.name,summary:c.description||'',details:'',kind:'character'}));
@@ -375,27 +387,34 @@ function grimoireRender(){
   const filter=$('grimoireFilter').value.trim().toLowerCase(),root=$('grimoireEntries');root.replaceChildren();
   for(const record of grimoireRecords().filter(r=>!filter||(r.name+' '+r.summary+' '+r.details).toLowerCase().includes(filter))){
     const b=document.createElement('button');b.type='button';b.textContent=record.name;b.className=record.id===grimoireSelected?'selected':'';
-    b.onclick=()=>{grimoireSelected=record.id;grimoireFill(record);grimoireRender()};root.append(b);
+    b.onclick=()=>{grimoireSelected=record.id;grimoireFill(record);grimoireRender();setGrimoireMobileEditor(true)};root.append(b);
+  }
+  if(!root.children.length){
+    const note=document.createElement('p');
+    note.className='hint grimoireEmpty';
+    note.textContent=filter?'No matching entries.':'No entries here yet. Choose New entry to begin.';
+    root.append(note);
   }
 }
 function grimoireFill(r){
   $('entryName').value=r?.name||'';$('entrySummary').value=r?.summary||'';$('entryDetails').value=r?.details||'';$('deleteEntry').disabled=!r;$('grimoireNotice').textContent='';
+  $('grimoireEditLabel').textContent=r?'Edit '+(r.name||'entry'):'New entry';
 }
 function grimoireOpen(){
   if(!book)return toast('Create a manuscript first');
-  $('grimoireFilter').value='';grimoireFill(null);grimoireRender();$('grimoireDialog').showModal();
+  $('grimoireFilter').value='';grimoireFill(null);grimoireRender();setGrimoireMobileEditor(false);$('grimoireDialog').showModal();
 }
 function openGrimoireTo(category,id){
   grimoireCategory=category;grimoireSelected=id;$('grimoireFilter').value='';
-  const r=grimoireRecords().find(x=>x.id===id)||null;grimoireFill(r);grimoireRender();$('grimoireDialog').showModal();
+  const r=grimoireRecords().find(x=>x.id===id)||null;grimoireFill(r);grimoireRender();setGrimoireMobileEditor(Boolean(r));$('grimoireDialog').showModal();
 }
 $('openGrimoire').onclick=()=>{grimoireCategory='characters';grimoireSelected=null;grimoireOpen()};
 $('closeGrimoire').onclick=()=>$('grimoireDialog').close();
 $('grimoireFilter').oninput=grimoireRender;
 document.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{
-  grimoireCategory=b.dataset.category;grimoireSelected=null;grimoireFill(null);grimoireRender();
+  grimoireCategory=b.dataset.category;grimoireSelected=null;grimoireFill(null);grimoireRender();setGrimoireMobileEditor(false);
 });
-$('newEntry').onclick=()=>{grimoireSelected=null;grimoireFill(null);grimoireRender();$('entryName').focus()};
+$('newEntry').onclick=()=>{grimoireSelected=null;grimoireFill(null);grimoireRender();setGrimoireMobileEditor(true);$('entryName').focus()};
 $('grimoireForm').onsubmit=async e=>{
   e.preventDefault();if(!book)return;
   const name=$('entryName').value.trim(),summary=$('entrySummary').value.trim(),details=$('entryDetails').value.trim();if(!name)return;
@@ -409,7 +428,7 @@ $('grimoireForm').onsubmit=async e=>{
       if(grimoireSelected)await query(db('world_entries').update(record).eq('id',grimoireSelected).eq('book_id',book.id));
       else await query(db('world_entries').insert({...record,book_id:book.id}));
     }
-    await loadBook();grimoireSelected=null;grimoireFill(null);grimoireRender();$('grimoireNotice').textContent='Entry saved to your private story archive';toast('Grimoire entry saved');
+    await loadBook();grimoireSelected=null;grimoireFill(null);grimoireRender();setGrimoireMobileEditor(false);$('grimoireNotice').textContent='Entry saved to your private story archive';toast('Grimoire entry saved');
   }catch(e){handleError(e);$('grimoireNotice').textContent=e.message||'Could not save'}
 };
 $('deleteEntry').onclick=async()=>{
@@ -417,7 +436,7 @@ $('deleteEntry').onclick=async()=>{
   try{
     const table=grimoireCategory==='characters'?'characters':'world_entries';
     await query(db(table).delete().eq('id',grimoireSelected).eq('book_id',book.id));
-    await loadBook();grimoireSelected=null;grimoireFill(null);grimoireRender();toast('Entry deleted');
+    await loadBook();grimoireSelected=null;grimoireFill(null);grimoireRender();setGrimoireMobileEditor(false);toast('Entry deleted');
   }catch(e){handleError(e)}
 };
 
