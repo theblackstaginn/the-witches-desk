@@ -1,0 +1,11 @@
+{
+  "name": "the-witches-desk",
+  "private": true,
+  "scripts": {
+    "check": "node --check app.js && node --check desk.js && node --check smoke.js",
+    "test": "node tests/desk.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
+}
