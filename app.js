@@ -1,5 +1,9 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 
+// Distinguish the installed iPhone Home Screen app from Safari.
+const installedWebApp = Boolean(window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches);
+document.documentElement.classList.toggle('installedWebApp', installedWebApp);
+
 const $=id=>document.getElementById(id);
 const schema='witches_desk';
 const cfgKey='witches-desk-config-v1';
@@ -367,7 +371,7 @@ const grimoireCategories=['characters','settings','items','plotlines','lore'];
 let grimoireCategory='characters',grimoireSelected=null;
 function setGrimoireMobileEditor(editing){
   const dialog=$('grimoireDialog');
-  const isMobile=window.matchMedia('(max-width:760px)').matches;
+  const isMobile=installedWebApp && window.matchMedia('(max-width:760px)').matches;
   dialog.classList.toggle('mobileEditing',Boolean(editing&&isMobile));
   if(isMobile){
     const body=dialog.querySelector('.grimoireBody');
