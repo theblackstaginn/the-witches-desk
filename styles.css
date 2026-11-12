@@ -169,7 +169,7 @@ body::before,body::after{display:none}
     url("./assets/textures/plum-embossed.png") center / 480px repeat;
 }
 .brand strong{
-  background:url("./assets/branding/witches-desk-wordmark.png") left center / contain no-repeat;
+  background:url("./assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png") left center / contain no-repeat;
   font-size:0;
   width:clamp(180px,23vw,360px);
   height:58px;
@@ -211,7 +211,7 @@ body:before,body:after{display:none}
   color:transparent;
   font-size:0;
   width:300px;height:55px;
-  background:url("./assets/branding/witches-desk-wordmark.png") left center/contain no-repeat;
+  background:url("./assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png") left center/contain no-repeat;
   display:block;
 }
 .module{position:relative;background:linear-gradient(180deg,rgba(37,14,49,.65),rgba(13,6,23,.7));}
@@ -601,19 +601,20 @@ body:before,body:after{display:none}
 @media(max-width:760px){.worldOverviewGrid{grid-template-columns:1fr}}
 
 
-/* Brand wordmark: hide baked-in asset-pack caption without altering logo source */
+/* Live brand logo: use the newly uploaded transparent emblem, unmasked. */
+.brand .brandMoon,.brand .brandRaven{display:none}
 .brand strong{
+  display:block;
+  flex:0 0 auto;
+  width:clamp(225px,25vw,340px);
+  height:72px;
   position:relative;
   overflow:hidden;
-  background:none!important;
+  background:url("./assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png") center center / cover no-repeat!important;
+  color:transparent;
+  font-size:0;
+  text-shadow:none;
 }
-/* Clip only the lower-right caption area. Keep the raven, moon,
-   hand-lettered title and original asset untouched. */
-.brand strong::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:url("./assets/branding/witches-desk-wordmark.png") left center / contain no-repeat;
-  clip-path:polygon(0 0,100% 0,100% 68%,42% 68%,42% 100%,0 100%);
-}
+.brand strong::before{content:none!important;display:none!important}
+@media(max-width:1080px){.brand strong{width:230px;height:62px}}
+@media(max-width:760px){.brand strong{width:190px;height:56px}}
