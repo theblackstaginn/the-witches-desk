@@ -599,3 +599,21 @@ body:before,body:after{display:none}
 .worldOverviewCard p{font-size:12px;color:#d7bada;line-height:1.35;margin:5px 0 0}
 .worldOverviewCount{font-size:11px;white-space:nowrap;color:#e6bf80}
 @media(max-width:760px){.worldOverviewGrid{grid-template-columns:1fr}}
+
+
+/* Brand wordmark: hide baked-in asset-pack caption without altering logo source */
+.brand strong{
+  position:relative;
+  overflow:hidden;
+  background:none!important;
+}
+/* Clip only the lower-right caption area. Keep the raven, moon,
+   hand-lettered title and original asset untouched. */
+.brand strong::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:url("./assets/branding/witches-desk-wordmark.png") left center / contain no-repeat;
+  clip-path:polygon(0 0,100% 0,100% 61%,42% 61%,42% 100%,0 100%);
+}
