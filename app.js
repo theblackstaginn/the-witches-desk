@@ -106,6 +106,26 @@ async function loadBook(){
     query(db('notes').select('*').eq('book_id',book.id).order('updated_at',{ascending:false})),
     query(db('world_entries').select('*').eq('book_id',book.id).order('category').order('title'))
   ]);
+
+  if(!chapters.length){
+    chapter=await query(db('chapters').insert({
+      book_id:book.id,
+      title:'Chapter 1',
+      sort_order:0
+    }).select().single());
+
+    scene=await query(db('scenes').insert({
+      book_id:book.id,
+      chapter_id:chapter.id,
+      title:'Untitled Scene',
+      sort_order:0
+    }).select().single());
+
+    chapters=[chapter];
+    scenes=[scene];
+    toast('Your first chapter and scene are ready');
+  }
+
   renderCharacters();renderNotes();renderChapters();
   chapter=chapters.find(c=>c.id===chapter?.id)||chapters[0]||null;
   await loadScenes();
