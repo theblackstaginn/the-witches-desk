@@ -117,11 +117,13 @@
     </aside>
 
     <section class="editorShell">
-      <div class="documentTabs">
-        <div class="docTab active"><span>▤</span><input id="sceneTitle" class="tabTitleInput" aria-label="Scene title" placeholder="Scene title"><span id="wordCount" class="hiddenCounter">0 words</span><b>×</b></div>
-        <div class="docTab"><span>♟</span>Caelum (Character)<b>×</b></div>
-        <div class="docTab"><span>⌾</span>The Hollow Wood (Location)<b>×</b></div>
-        <button class="newTab" type="button">＋</button>
+      <div class="documentTabs" id="documentTabs">
+        <div class="docTab active sceneTab">
+          <span aria-hidden="true">▤</span>
+          <input id="sceneTitle" class="tabTitleInput" aria-label="Scene title" placeholder="Untitled Scene">
+          <span id="wordCount" class="hiddenCounter">0 words</span>
+        </div>
+        <button class="newTab" type="button" title="New scene" aria-label="New scene">＋</button>
       </div>
 
       <div class="editorMenus">
