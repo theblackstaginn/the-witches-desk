@@ -104,7 +104,7 @@ dialog::backdrop{background:#08050ccc;backdrop-filter:blur(5px)}
 /* Asset slots accept url(...) once final artwork is supplied. */
 :root {
   --desk-image:none; --leather-panel-image:none; --leather-button-image:none;
-  --parchment-light-image:none;
+  --parchment-light-image:url('./assets/parchment-light-vol-1.jpg');
   --paper:#f4ecd9; --paper-ink:#30271f;
   --rail-width:210px; --header-height:60px;
 }

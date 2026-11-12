@@ -65,23 +65,20 @@ app.js is unchanged.
 
 The final leather panels, leather buttons and writer's-view background have not
 been generated. Set these CSS custom properties in styles.css when approved files
-are ready (all currently default to none):
+are ready (leather and desk slots currently default to none):
 
 - --desk-image: full-scene background
 - --leather-panel-image: rails and top bars
 - --leather-button-image: shared button artwork
 - --parchment-light-image: original Parchment Light Vol. 1 sheet
 
-For example, place the authorized clean sheet in assets/parchment-light-vol-1.jpg
-and set --parchment-light-image: url('./assets/parchment-light-vol-1.jpg'). The
-editor scales the sheet to page width and repeats vertically for long scenes,
-with a warm ivory fallback if unavailable. The background is CSS only: it is never
-stored in manuscript HTML or included in manuscript exports. Review text contrast
-and the repeat seam when choosing the final sheet.
-
-The Lace & Leather repository currently contains the product cover and explicitly
-watermarked Vol. 1 gallery samples, not a verified clean original. No promotional
-cover or watermarked sample is substituted for the requested manuscript texture.
+The manuscript uses assets/parchment-light-vol-1.jpg, the original
+Parchment_Light_Vol_1_01.jpg supplied by the owner by email on November 12, 2026.
+The original JPEG is preserved without alteration. The editor scales the sheet
+to page width and repeats vertically for long scenes, with a warm ivory fallback
+if unavailable. The background is CSS only: it is never stored in manuscript HTML
+or included in manuscript exports. Future replacement sheets can use the same
+custom property. Final leather and desk image assets remain deferred.
 
 ### Ambient scene
 

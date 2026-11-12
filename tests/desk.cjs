@@ -1,7 +1,7 @@
 const {chromium}=require('playwright');
 const http=require('http'),fs=require('fs'),path=require('path'),assert=require('assert/strict');
 const root=path.join(__dirname,'..');
-const server=http.createServer((req,res)=>{const file=path.join(root,req.url==='/'?'index.html':req.url);try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file))}catch{res.statusCode=404;res.end()}});
+const server=http.createServer((req,res)=>{const file=path.join(root,req.url==='/'?'index.html':req.url);try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.jpg')?'image/jpeg':'text/html');res.end(fs.readFileSync(file))}catch{res.statusCode=404;res.end()}});
 const stub=`const data={books:[{id:'book',title:'Test manuscript'}],chapters:[{id:'chapter',book_id:'book',title:'Chapter One',sort_order:0}],scenes:[{id:'scene',book_id:'book',chapter_id:'chapter',title:'The writing room',content:{html:'<h1>The writing room</h1><p>A quiet page waits for the next story.</p>'},updated_at:'2026-01-01',word_count:9}],characters:[],notes:[],world_entries:[],scene_revisions:[]};window.testWrites=[];
 export function createClient(){return {auth:{onAuthStateChange(fn){setTimeout(()=>fn('SIGNED_IN',{user:{id:'test'}}),0)},getSession:async()=>({data:{session:{user:{id:'test'}}}})},schema(){return{from(table){let filters=[],patch=null;const q={select(){return q},eq(k,v){filters.push([k,v]);return q},order(){return q},limit(){return q},update(v){patch=v;return q},insert(v){data[table].push({id:'new',...v});return q},single(){return q},then(resolve){const rows=(data[table]||[]).filter(r=>filters.every(([k,v])=>r[k]===v));if(patch){rows.forEach(r=>Object.assign(r,patch));window.testWrites.push({table,patch})}return Promise.resolve({data:rows,error:null}).then(resolve)}};return q}}}}}`;
 (async()=>{await new Promise(r=>server.listen(4173,'127.0.0.1',r));const browser=await chromium.launch({channel:'msedge',headless:true});try{
@@ -9,6 +9,7 @@ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];
 await page.route('https://esm.sh/**',r=>r.fulfill({contentType:'text/javascript',body:stub}));
 await page.goto('http://127.0.0.1:4173');await page.waitForFunction(()=>document.querySelector('#status').textContent==='Saved');
 assert.equal(await page.locator('#auth').isVisible(),false);
+assert(await page.evaluate(async()=>{const img=new Image();img.src='./assets/parchment-light-vol-1.jpg';await img.decode();return img.naturalWidth===3600 && getComputedStyle(document.getElementById('editor')).backgroundImage.includes('parchment-light-vol-1.jpg')}));
 await page.waitForTimeout(2200);await page.screenshot({path:path.join(require('os').tmpdir(),'witches-desk-desktop.png')});
 const before=await page.locator('#editor').boundingBox();
 await page.click('#toggleManuscripts');await page.click('#toggleDetails');const after=await page.locator('#editor').boundingBox();assert(after.width>before.width);
