@@ -1,0 +1,68 @@
+name: Build Witch's Desk home-screen icons
+
+on:
+  push:
+    paths:
+      - .github/workflows/build-witches-desk-icons.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow==11.3.0
+      - name: Crop the raven, crescent and book from the original logo
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+
+          source = Image.open('assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png').convert('RGBA')
+          sx, sy = source.width / 2172, source.height / 724
+          rect = (round(250*sx), round(35*sy), round(825*sx), round(610*sy))
+          crop = source.crop(rect)
+          size = crop.size[0]
+          art = Image.new('RGBA', crop.size, (26, 9, 42, 255))
+          art.alpha_composite(crop)
+
+          # The original wordmark starts near the right edge. Fade that edge into
+          # plum, while keeping the raven, book and crescent completely intact.
+          pixels = art.load()
+          for y in range(crop.height):
+              for x in range(max(0, crop.width - round(size*0.105)), crop.width):
+                  t = (x - (crop.width - round(size*0.105))) / max(1, round(size*0.105))
+                  t = t ** 1.7
+                  r, g, b, _ = pixels[x, y]
+                  pixels[x, y] = (round(r*(1-t) + 31*t), round(g*(1-t) + 10*t), round(b*(1-t) + 47*t), 255)
+
+          output = Path('assets/app-icons')
+          output.mkdir(parents=True, exist_ok=True)
+          for size in (32, 180, 192, 512):
+              im = art.convert('RGB').resize((size, size), Image.Resampling.LANCZOS)
+              filename = ('favicon-32.png' if size == 32 else
+                          'apple-touch-icon.png' if size == 180 else
+                          f'icon-{size}.png')
+              im.save(output / filename, optimize=True, compress_level=9)
+
+          maskable = Image.new('RGB', (512, 512), '#1b0a2b')
+          safe = art.convert('RGB').resize((382, 382), Image.Resampling.LANCZOS)
+          maskable.paste(safe, ((512-382)//2, (512-382)//2))
+          maskable.save(output / 'icon-maskable-512.png', optimize=True)
+          print('Created:', [p.name for p in output.glob('*.png')])
+          PY
+      - name: Commit generated icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/app-icons/*.png
+          if ! git diff --cached --quiet; then
+            git commit -m "Generate raven-and-crescent web app icons from logo"
+            git push
+          fi
