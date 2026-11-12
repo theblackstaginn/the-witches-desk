@@ -497,3 +497,86 @@ body:before,body:after{display:none}
   #workspace .leftRail,#workspace .rightRail {background:rgba(16,7,26,.26);}
   #workspace .editorShell {background:rgba(17,7,25,.16);}
 }
+
+
+/* Interactive menu bar and working workspace panels - 2026-11-12 */
+.editorMenus{position:relative;overflow:visible}
+.menuWords{display:flex;align-items:center;gap:4px;min-width:0;overflow-x:auto;scrollbar-width:thin}
+.menuWords .menuTrigger{
+  display:inline-flex;align-items:center;gap:4px;
+  flex:0 0 auto;min-height:28px;padding:4px 10px;
+  border:1px solid transparent;border-radius:6px;
+  background:transparent;color:#f4e1ee;
+  font:600 13px/1.2 Georgia,serif;
+  cursor:pointer;
+}
+.menuWords .menuTrigger:hover,
+.menuWords .menuTrigger[aria-expanded="true"]{
+  color:#fff2d7;background:rgba(111,46,142,.48);
+  border-color:rgba(221,167,81,.48);
+}
+.menuTrigger span{opacity:.7;font-size:11px}
+.deskMenu{
+  position:fixed;z-index:120;
+  display:grid;gap:3px;
+  min-width:220px;max-width:min(320px,calc(100vw - 16px));
+  max-height:min(70vh,480px);overflow:auto;
+  padding:8px;
+  border:1px solid rgba(225,174,97,.78);border-radius:10px;
+  background:linear-gradient(140deg,rgba(39,18,53,.98),rgba(16,8,27,.99));
+  color:#f4e9ef;
+  box-shadow:0 18px 55px #000c,inset 0 1px rgba(255,233,181,.14);
+}
+.deskMenu button{
+  text-align:left;width:100%;padding:9px 12px;
+  border:1px solid transparent;border-radius:6px;
+  background:transparent;color:#f3e6ef;
+  font:14px/1.25 Georgia,serif;cursor:pointer;
+}
+.deskMenu button:hover,.deskMenu button:focus-visible{
+  outline:none;border-color:rgba(223,174,91,.4);background:rgba(120,54,149,.5);
+}
+.deskMenu button:disabled{opacity:.4;cursor:not-allowed}
+.deskColorPicker{
+  flex:0 0 24px;width:24px;min-width:24px;height:28px;
+  padding:2px;border:1px solid rgba(206,153,75,.5);border-radius:4px;
+  background:transparent;cursor:pointer;
+}
+.deskProjectList,.deskNotesList{display:grid;gap:8px}
+.deskProjectItem,.deskNotesList button{
+  width:100%;padding:12px 14px;text-align:left;
+  border:1px solid rgba(157,102,194,.48);border-radius:9px;
+  background:rgba(63,29,84,.45);color:#f4dfee;cursor:pointer;
+}
+.deskProjectItem{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.deskProjectItem strong{font-size:15px}
+.deskProjectItem span{color:#d2b1d9;font-size:12px}
+.deskProjectItem.current,.deskNotesList .selected{background:rgba(95,39,133,.65);border-color:#c69adf}
+.deskProjectItem:hover,.deskNotesList button:hover{background:rgba(106,42,139,.7)}
+.deskNotesLayout{display:grid;grid-template-columns:minmax(160px,230px) minmax(0,1fr);gap:20px}
+.deskNotesIndex{border-right:1px solid rgba(192,144,203,.3);padding-right:16px}
+#newDeskNote{width:100%;margin-bottom:14px;border:1px solid rgba(211,168,91,.6);padding:10px}
+#deskNoteForm{min-width:0}
+#deskNoteForm label{display:block;margin-bottom:12px;color:#e5c8e9}
+#deskNoteForm input,#deskNoteForm textarea{width:100%;margin-top:5px;display:block;box-sizing:border-box}
+#deskNoteBody{min-height:200px;resize:vertical}
+.helpShortcuts{padding:8px 15px;margin:12px 0;border:1px solid rgba(166,102,185,.35);background:rgba(57,24,73,.45);border-radius:8px}
+.helpShortcuts p{margin:8px 0}
+@media(min-width:1081px){
+  #workspace.hideLeftRail:not(.writingFocus){grid-template-columns:0 minmax(0,1fr) clamp(220px,20vw,285px)}
+  #workspace.hideRightRail:not(.writingFocus){grid-template-columns:clamp(215px,21vw,300px) minmax(0,1fr) 0}
+  #workspace.hideLeftRail.hideRightRail:not(.writingFocus){grid-template-columns:0 minmax(0,1fr) 0}
+}
+#workspace.hideLeftRail .leftRail,#workspace.hideRightRail .rightRail{
+  visibility:hidden;overflow:hidden;padding:0;border:0;
+}
+@media(min-width:761px) and (max-width:1080px){
+  #workspace.hideLeftRail:not(.writingFocus){grid-template-columns:0 minmax(0,1fr)}
+}
+@media(max-width:760px){
+  .menuWords .menuTrigger{padding:4px 7px}
+  .deskNotesLayout{grid-template-columns:1fr}
+  .deskNotesIndex{border-right:0;border-bottom:1px solid rgba(192,144,203,.3);padding:0 0 14px}
+  #workspace.hideLeftRail .leftRail{display:none}
+  #workspace.hideRightRail .rightRail{display:none}
+}
