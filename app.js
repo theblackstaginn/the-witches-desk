@@ -448,9 +448,21 @@ async function exportData(kind){
   $('exportDialog').close();
 }
 $('printManuscript').onclick=async()=>{
-  await saveNow();const structure=await allBookScenes();let body='<h1>'+safeText(book.title)+'</h1>';
-  for(const c of structure){body+='<h2>'+safeText(c.title)+'</h2>';for(const s of c.scenes)body+='<section><h3>'+safeText(s.title)+'</h3>'+normalizeDoc(s.content)+'</section>'}
-  const w=window.open('','_blank');w.document.write('<!doctype html><title>'+safeText(book.title)+'</title><style>@page{margin:1in}body{font:12pt/1.65 Georgia,serif;color:#111}h1{text-align:center;margin:30vh 0 1in}h2{page-break-before:always}h3{margin-top:2em}p{orphans:3;widows:3}</style>'+body);w.document.close();w.focus();setTimeout(()=>w.print(),250);$('exportDialog').close();
+  if(!book){toast('Create a manuscript first');return}
+  // Open the print window immediately from the click, before asynchronous database reads.
+  const w=window.open('','_blank');
+  if(!w){toast('Allow pop-ups to print or save the manuscript as PDF');return}
+  w.document.write('<!doctype html><title>Preparing manuscript…</title><p>Preparing your manuscript…</p>');
+  try{
+    await saveNow();
+    const structure=await allBookScenes();
+    let body='<h1>'+safeText(book.title)+'</h1>';
+    for(const c of structure){body+='<h2>'+safeText(c.title)+'</h2>';for(const sceneRow of c.scenes)body+='<section><h3>'+safeText(sceneRow.title)+'</h3>'+normalizeDoc(sceneRow.content)+'</section>'}
+    w.document.open();
+    w.document.write('<!doctype html><title>'+safeText(book.title)+'</title><style>@page{margin:1in}body{font:12pt/1.65 Georgia,serif;color:#111}h1{text-align:center;margin:30vh 0 1in}h2{page-break-before:always}h3{margin-top:2em}p{orphans:3;widows:3}</style>'+body);
+    w.document.close();w.focus();setTimeout(()=>w.print(),350);
+    if($('exportDialog').open)$('exportDialog').close();
+  }catch(e){w.close();handleError(e)}
 };
 
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
@@ -508,6 +520,30 @@ function activateModule(name){
 function openStoryCategory(category){
   if(!book){toast('Create a manuscript first');return}
   grimoireCategory=category;grimoireSelected=null;grimoireOpen();
+}
+function openWorldOverview(){
+  if(!book){toast('Create a manuscript first');return}
+  const categories=[
+    {key:'characters',title:'Characters',desc:'People, motivations, relationships, and secrets',count:characters.length,icon:'♟'},
+    {key:'settings',title:'Locations',desc:'Settings, landmarks, regions, and worlds',count:worldEntries.filter(w=>w.category==='settings').length,icon:'⌾'},
+    {key:'items',title:'Items & Artifacts',desc:'Objects, relics, tools, and treasures',count:worldEntries.filter(w=>w.category==='items').length,icon:'◇'},
+    {key:'plotlines',title:'Plots & Timelines',desc:'Story arcs, events, and major threads',count:worldEntries.filter(w=>w.category==='plotlines').length,icon:'⌁'},
+    {key:'lore',title:'Lore & Creatures',desc:'Histories, creatures, traditions, and magic',count:worldEntries.filter(w=>w.category==='lore').length,icon:'▤'}
+  ];
+  const root=$('worldOverviewGrid');root.replaceChildren();
+  for(const category of categories){
+    const btn=document.createElement('button');btn.type='button';btn.className='worldOverviewCard';
+    const icon=document.createElement('span');icon.className='worldOverviewIcon';icon.textContent=category.icon;
+    const info=document.createElement('div');
+    const title=document.createElement('strong');title.textContent=category.title;
+    const description=document.createElement('p');description.textContent=category.desc;
+    info.append(title,description);
+    const count=document.createElement('span');count.className='worldOverviewCount';count.textContent=category.count+' saved';
+    btn.append(icon,info,count);
+    btn.onclick=()=>{$('worldOverviewDialog').close();openStoryCategory(category.key)};
+    root.append(btn);
+  }
+  $('worldOverviewDialog').showModal();
 }
 function openDeskProjects(){
   renderDeskProjects();
@@ -633,11 +669,11 @@ async function openDeskSection(name){
     return;
   }
   if(name==='projects'){activateModule(name);openDeskProjects();return}
+  if(name==='world'){activateModule(name);openWorldOverview();return}
   if(name==='notes'){activateModule(name);openDeskNotes();return}
   if(name==='research'){activateModule(name);await openDeskSearch();return}
   if(name==='vault'){activateModule(name);showDeskExport();return}
   const category={
-    world:'lore',
     characters:'characters',
     locations:'settings',
     items:'items',
