@@ -100,24 +100,59 @@ dialog::backdrop{background:#08050ccc;backdrop-filter:blur(5px)}
 .exportGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .exportGrid button{min-height:56px}
 
-@media(max-width:1050px){
-  main{grid-template-columns:200px minmax(0,1fr)}
-  .right{grid-column:1/-1;border-top:1px solid #533863;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  main{height:auto}
-  aside{max-height:340px}
-  .editorShell{min-height:72vh}
+
+/* Asset slots accept url(...) once final artwork is supplied. */
+:root {
+  --desk-image:none; --leather-panel-image:none; --leather-button-image:none;
+  --parchment-light-image:none;
+  --paper:#f4ecd9; --paper-ink:#30271f;
+  --rail-width:210px; --header-height:60px;
 }
-@media(max-width:700px){
-  main{display:block}
-  aside{max-height:none}
-  #editor{margin:8px;padding:28px 24px;min-height:60vh;font-size:17px}
-  .toolbar{padding:8px;top:55px}
-  .documentBar{padding:8px}
-  .right{display:block}
-  .grimoireBody{grid-template-columns:1fr}
-  .grimoireList{border-right:0;border-bottom:1px solid #4c345b;padding:0 0 12px}
-  .grimoireHead,.dialogHead{padding:18px}
-  .grimoireTabs{padding:12px}
-  .exportGrid{grid-template-columns:1fr}
-  header{padding:0 10px}header strong{font-size:16px}#searchOpen{font-size:11px}
+[hidden]{display:none!important}
+body{background:#100c13;background-image:var(--desk-image),radial-gradient(ellipse at 30% 80%,#342635,#100c13 75%);background-size:cover;background-attachment:fixed}
+#app{isolation:isolate}
+header{position:relative;z-index:2;padding-inline:10px;height:var(--header-height)}
+header,aside,.documentBar,.toolbar{background-color:#291b35;background-image:var(--leather-panel-image),linear-gradient(125deg,#62477555,#21152be8);background-size:cover;box-shadow:inset 0 0 0 3px #140e1b55,inset 0 0 0 4px #b49ac321}
+button{background-color:#432c53;background-image:var(--leather-button-image),linear-gradient(#9a78b32b,#180d2444);background-size:cover;border-color:#87679c;box-shadow:inset 0 1px #e4c7ff22,0 2px 3px #0004;min-height:32px}
+button:hover:not(:disabled){background-color:#614275;border-color:#c5a4df}
+button:active:not(:disabled){box-shadow:inset 0 2px 5px #0008}
+nav button,.entry{border:1px solid transparent;box-shadow:none}
+main{position:relative;display:grid;grid-template-columns:var(--rail-width) minmax(0,1fr) var(--rail-width);grid-template-rows:auto auto minmax(0,1fr);height:calc(100dvh - var(--header-height));gap:0}
+.editorShell{display:contents}
+.documentBar{grid-column:1/-1;grid-row:1;position:relative;top:auto;padding:6px 8px;gap:8px;z-index:2}
+.documentBar input{flex:1;min-width:0;max-width:none}
+.documentBar button{white-space:nowrap;font-size:12px}
+.toolbar{grid-column:1/-1;grid-row:2;position:relative;top:auto;padding:5px 8px;z-index:2}
+.toolbar button{min-height:32px}
+aside{position:relative;z-index:1;padding:8px;min-width:0;max-height:none;overscroll-behavior:contain}
+.leftRail{grid-column:1;grid-row:3;background-color:transparent;background-image:var(--leather-panel-image),linear-gradient(#291b35 50%,#291b35c9 78%,#291b3544)}
+.right{grid-column:3;grid-row:3;display:block}
+.heading:first-child{margin-top:0}
+.pageWell{grid-column:2;grid-row:3;overflow:auto;min-width:0;min-height:0;padding:12px clamp(8px,1.4vw,24px) 24px;scrollbar-gutter:stable;z-index:1}
+#editor{background-color:var(--paper);background-image:var(--parchment-light-image);background-size:100% auto;background-repeat:repeat-y;color:var(--paper-ink);width:100%;max-width:1120px;min-height:100%;margin:0 auto;padding:clamp(28px,4vw,64px) clamp(24px,4.5vw,72px);border:1px solid #d5c4a6;border-radius:2px;font-size:18px;line-height:1.8;box-shadow:0 12px 35px #0008,inset 0 0 40px #98744312}
+#editor:empty:before{color:#786b5b;pointer-events:none}
+#editor blockquote{color:#645440;border-color:#9b8263}
+#editor img{max-width:100%;height:auto}
+#editor:focus-visible{outline:2px solid #c7a7ed;outline-offset:-3px}
+main.leftClosed{grid-template-columns:0 minmax(0,1fr) var(--rail-width)}
+main.rightClosed{grid-template-columns:var(--rail-width) minmax(0,1fr) 0}
+main.leftClosed.rightClosed{grid-template-columns:0 minmax(0,1fr) 0}
+main.leftClosed .leftRail,main.rightClosed .right{display:none}
+#deskAmbient{position:fixed;bottom:0;left:0;width:210px;height:min(650px,85dvh);z-index:-1;pointer-events:none;overflow:hidden;contain:strict}
+#smokeCanvas{display:block;width:100%;height:100%;pointer-events:none}
+@media(min-width:1500px){:root{--rail-width:230px}}
+@media(max-width:760px){
+  :root{--header-height:64px;--rail-width:min(280px,85vw)}
+  header{gap:6px}header strong{font-size:15px}header small{font-size:8px}.headerActions{gap:5px}#status{font-size:11px}header button{font-size:11px;padding:6px}
+  main,main.leftClosed,main.rightClosed,main.leftClosed.rightClosed{grid-template-columns:0 minmax(0,1fr) 0}
+  aside{position:absolute;top:0;bottom:0;width:var(--rail-width);z-index:5;background-color:#291b35;box-shadow:0 8px 30px #000a}
+  .leftRail{left:0}.right{right:0}
+  .documentBar{flex-wrap:wrap}.documentBar input{order:3;flex-basis:75%}.documentBar #wordCount{order:4}.documentBar #toggleDetails{margin-left:auto}
+  .toolbar{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain}.toolbar button{flex-shrink:0}.toolbarSep{flex-shrink:0}
+  .pageWell{padding:8px 6px 16px}#editor{padding:28px 22px;min-height:100%;font-size:18px}
+  .grimoireBody{grid-template-columns:1fr}.grimoireList{border-right:0;border-bottom:1px solid #4c345b;padding:0 0 12px}
+  .grimoireHead,.dialogHead{padding:18px}.grimoireTabs{padding:12px}.exportGrid{grid-template-columns:1fr}
+  #deskAmbient{width:150px;opacity:.6}
 }
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+@media print{#deskAmbient{display:none}}

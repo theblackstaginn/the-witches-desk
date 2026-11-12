@@ -1,0 +1,24 @@
+const {chromium}=require('playwright');
+const http=require('http'),fs=require('fs'),path=require('path'),assert=require('assert/strict');
+const root=path.join(__dirname,'..');
+const server=http.createServer((req,res)=>{const file=path.join(root,req.url==='/'?'index.html':req.url);try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file))}catch{res.statusCode=404;res.end()}});
+const stub=`const data={books:[{id:'book',title:'Test manuscript'}],chapters:[{id:'chapter',book_id:'book',title:'Chapter One',sort_order:0}],scenes:[{id:'scene',book_id:'book',chapter_id:'chapter',title:'The writing room',content:{html:'<h1>The writing room</h1><p>A quiet page waits for the next story.</p>'},updated_at:'2026-01-01',word_count:9}],characters:[],notes:[],world_entries:[],scene_revisions:[]};window.testWrites=[];
+export function createClient(){return {auth:{onAuthStateChange(fn){setTimeout(()=>fn('SIGNED_IN',{user:{id:'test'}}),0)},getSession:async()=>({data:{session:{user:{id:'test'}}}})},schema(){return{from(table){let filters=[],patch=null;const q={select(){return q},eq(k,v){filters.push([k,v]);return q},order(){return q},limit(){return q},update(v){patch=v;return q},insert(v){data[table].push({id:'new',...v});return q},single(){return q},then(resolve){const rows=(data[table]||[]).filter(r=>filters.every(([k,v])=>r[k]===v));if(patch){rows.forEach(r=>Object.assign(r,patch));window.testWrites.push({table,patch})}return Promise.resolve({data:rows,error:null}).then(resolve)}};return q}}}}}`;
+(async()=>{await new Promise(r=>server.listen(4173,'127.0.0.1',r));const browser=await chromium.launch({channel:'msedge',headless:true});try{
+const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('https://esm.sh/**',r=>r.fulfill({contentType:'text/javascript',body:stub}));
+await page.goto('http://127.0.0.1:4173');await page.waitForFunction(()=>document.querySelector('#status').textContent==='Saved');
+assert.equal(await page.locator('#auth').isVisible(),false);
+await page.waitForTimeout(2200);await page.screenshot({path:path.join(require('os').tmpdir(),'witches-desk-desktop.png')});
+const before=await page.locator('#editor').boundingBox();
+await page.click('#toggleManuscripts');await page.click('#toggleDetails');const after=await page.locator('#editor').boundingBox();assert(after.width>before.width);
+await page.locator('#editor').fill('A revised passage for autosave.');await page.waitForFunction(()=>window.testWrites.some(w=>w.table==='scenes'));assert.equal(await page.locator('#wordCount').textContent(),'5 words');
+await page.click('#exportMenu');assert(await page.locator('#exportDialog').isVisible());await page.click('[data-close="exportDialog"]');
+await page.click('#findReplace');assert(await page.locator('#findDialog').isVisible());await page.click('[data-close="findDialog"]');
+await page.click('#toggleDetails');await page.click('#openGrimoire');assert(await page.locator('#grimoireDialog').isVisible());await page.click('#closeGrimoire');
+await page.emulateMedia({reducedMotion:'reduce'});await page.waitForTimeout(100);const still=await page.locator('#smokeCanvas').evaluate(c=>c.toDataURL());await page.waitForTimeout(250);assert.equal(await page.locator('#smokeCanvas').evaluate(c=>c.toDataURL()),still);
+await page.emulateMedia({reducedMotion:'no-preference'});await page.waitForTimeout(200);const moving=await page.locator('#smokeCanvas').evaluate(c=>c.toDataURL());await page.waitForTimeout(250);assert.notEqual(await page.locator('#smokeCanvas').evaluate(c=>c.toDataURL()),moving);
+for(const width of [1024,760,390,320]){await page.setViewportSize({width,height:844});await page.waitForTimeout(100);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow at '+width);if(width<=760){assert.equal(await page.locator('#manuscriptRail').isVisible(),false);await page.click('#toggleManuscripts');assert(await page.locator('#manuscriptRail').isVisible());await page.click('#toggleDetails');assert.equal(await page.locator('#manuscriptRail').isVisible(),false);assert(await page.locator('#detailsRail').isVisible());await page.locator('#pov').focus();await page.keyboard.press('Escape');assert.equal(await page.locator('#detailsRail').isVisible(),false);assert.equal(await page.locator('#toggleDetails').evaluate(e=>e===document.activeElement),true)}}
+await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(require('os').tmpdir(),'witches-desk-mobile.png')});
+assert.deepEqual(errors,[]);console.log('PASS: layout 1440/1024/760/390/320, rail focus, editor autosave, dialogs, live reduced-motion and animation, no browser errors.');
+}finally{await browser.close();server.close()}})().catch(e=>{console.error(e);server.close();process.exitCode=1});

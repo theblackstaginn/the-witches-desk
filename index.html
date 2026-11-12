@@ -8,6 +8,7 @@
 </head>
 <body>
 <div id="app">
+  <div id="deskAmbient" aria-hidden="true"><canvas id="smokeCanvas"></canvas></div>
   <header>
     <strong>☾ The Witch’s Desk <small>✦ Midnight Lavender</small></strong>
     <div class="headerActions">
@@ -41,7 +42,7 @@
   </section>
 
   <main id="workspace" hidden>
-    <aside class="leftRail">
+    <aside class="leftRail" id="manuscriptRail" aria-label="Manuscripts and scenes">
       <div class="heading"><h2>Manuscripts</h2><button id="addBook" title="New manuscript">+</button></div>
       <select id="books" aria-label="Choose manuscript"></select>
       <div class="miniActions">
@@ -68,8 +69,10 @@
 
     <section class="editorShell">
       <div class="documentBar">
+        <button id="toggleManuscripts" type="button" aria-controls="manuscriptRail" aria-expanded="true">☰ Manuscripts</button>
         <input id="sceneTitle" aria-label="Scene title" placeholder="Scene title">
         <span id="wordCount">0 words</span>
+        <button id="toggleDetails" type="button" aria-controls="detailsRail" aria-expanded="true">✧ Details</button>
       </div>
 
       <div class="toolbar" role="toolbar" aria-label="Formatting">
@@ -98,10 +101,10 @@
         <button id="exportMenu">Export ▾</button>
       </div>
 
-      <article id="editor" contenteditable="true" spellcheck="true" aria-label="Manuscript editor" data-placeholder="The story begins…"></article>
+      <div class="pageWell"><article id="editor" contenteditable="true" spellcheck="true" aria-label="Manuscript editor" data-placeholder="The story begins…"></article></div>
     </section>
 
-    <aside class="right">
+    <aside class="right" id="detailsRail" aria-label="Scene details and story tools">
       <h2>Scene details</h2>
       <label>Point of view<select id="pov"><option value="">Unassigned</option></select></label>
       <label>POV structure<select id="povMode"><option value="single">Single POV</option><option value="dual">Dual POV</option></select></label>
@@ -184,5 +187,6 @@
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
 <script type="module" src="./app.js"></script>
+<script type="module" src="./desk.js"></script>
 </body>
 </html>
