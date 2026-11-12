@@ -258,3 +258,77 @@ body:before,body:after{display:none}
 }
 @media(max-width:1080px){.brand strong{width:240px;height:48px}}
 @media(max-width:760px){.brand strong{width:190px;height:44px}}
+
+
+/* Writing workspace layout repair - 2026-11-12 */
+[hidden]{display:none!important}
+#workspace{
+  height:calc(100dvh - 76px);
+  min-height:0;
+  grid-template-columns:clamp(215px,21vw,300px) minmax(0,1fr) clamp(220px,20vw,285px);
+  overflow:hidden;
+}
+.editorShell{
+  min-width:0;
+  min-height:0;
+  height:100%;
+  grid-template-rows:52px 38px 44px minmax(0,1fr) 44px;
+}
+.documentTabs,.editorMenus,.toolbar,.statusBar{min-width:0}
+.documentTabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.docTab{flex:0 0 auto}
+.toolbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;white-space:nowrap}
+.toolbar button,.toolbar select{flex:0 0 auto}
+.paperStage{
+  min-width:0;
+  min-height:0;
+  overflow:auto;
+  padding:20px clamp(12px,2vw,32px) 28px;
+  overscroll-behavior:contain;
+}
+#editor{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  max-width:850px;
+  min-height:max(100%,620px);
+  margin:0 auto;
+  padding:clamp(56px,7vw,88px) clamp(30px,7vw,95px);
+  outline:none;
+  cursor:text;
+  overflow-wrap:break-word;
+  background-size:100% 100%,100% 100%,auto;
+}
+#editor:focus{outline:none}
+#editor:empty:before{content:attr(data-placeholder);position:static;display:block;font-size:18px;transform:none}
+#editor:empty:after{display:none}
+.statusBar{overflow-x:auto;scrollbar-width:thin}
+.statusBar>span{flex:0 0 auto;padding-inline:12px}
+.rightRail{padding:14px 10px 22px}
+.topbar{min-width:0}
+.brand{min-width:0;flex:0 0 auto}
+.moduleNav{justify-content:flex-start;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.module{flex:0 0 70px;min-width:0}
+.headerActions{flex:0 0 auto}
+@media(max-width:1080px){
+  body{overflow:hidden}
+  .topbar{height:76px;min-height:76px;flex-wrap:nowrap}
+  .moduleNav{order:0;width:auto}
+  #workspace{height:calc(100dvh - 76px);min-height:0;grid-template-columns:210px minmax(0,1fr)}
+  .rightRail{display:none}
+  .editorShell{min-height:0}
+  .brand strong{width:190px;height:46px}
+  #editor{padding:56px 42px}
+}
+@media(max-width:760px){
+  body{overflow:auto}
+  .topbar{height:auto;min-height:70px;flex-wrap:wrap}
+  .moduleNav{order:3;flex:0 0 100%;height:65px}
+  #workspace{display:block;height:auto;min-height:calc(100dvh - 135px);overflow:visible}
+  .leftRail{max-height:220px;overflow:auto}
+  .editorShell{height:calc(100dvh - 135px);min-height:520px;grid-template-rows:50px 38px 44px minmax(0,1fr) 42px}
+  .paperStage{padding:8px}
+  #editor{min-height:max(100%,460px);padding:50px 25px;font-size:17px}
+  .rightRail{display:block;padding:12px}
+  .module{flex-basis:70px}
+}
