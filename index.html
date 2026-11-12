@@ -1,10 +1,323 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>The Witch's Desk</title><link rel="stylesheet" href="./styles.css"></head>
-<body><div id="app">
-<header><strong>☾ The Witch’s Desk <small>✦ Midnight Lavender</small></strong><span id="status">Ready</span><button id="signout" hidden>Sign out</button></header>
-<section id="setup" class="panel" hidden><h1>Connect the writing desk</h1><p>Enter your Supabase project URL and publishable key. These are public client configuration values, never a secret or service-role key.</p><form id="configForm"><label>Project URL<input id="url" type="url" placeholder="https://…supabase.co" required></label><label>Publishable key<input id="key" required autocomplete="off"></label><button>Save configuration</button></form></section>
-<section id="auth" class="panel" hidden><h1>Enter the writing room</h1><form id="authForm"><label>Email<input id="email" type="email" required></label><label>Password<input id="password" type="password" minlength="6" required></label><div class="actions"><button type="submit">Sign in</button><button type="button" id="signup">Create account</button></div></form><p id="authMessage"></p></section>
-<main id="workspace" hidden><aside><div class="heading"><h2>Manuscripts</h2><button id="addBook" title="New manuscript">+</button></div><select id="books" aria-label="Choose manuscript"></select><div class="heading"><h2>Chapters</h2><button id="addChapter" title="New chapter">+</button></div><nav id="chapters"></nav><div class="heading"><h2>Scenes</h2><button id="addScene" title="New scene">+</button></div><nav id="scenes"></nav></aside>
-<section class="editorShell"><div class="documentBar"><input id="sceneTitle" aria-label="Scene title" placeholder="Scene title"><span id="wordCount">0 words</span></div><div class="toolbar" role="toolbar" aria-label="Formatting"><button data-cmd="undo" title="Undo">↶</button><button data-cmd="redo" title="Redo">↷</button><button data-cmd="bold" title="Bold"><b>B</b></button><button data-cmd="italic" title="Italic"><i>I</i></button><button data-cmd="underline" title="Underline"><u>U</u></button><button data-cmd="insertUnorderedList" title="Bullets">• List</button><button data-cmd="insertOrderedList" title="Numbered list">1. List</button><button data-block="p">Body</button><button data-block="h2">Heading</button><button id="export">Export HTML</button><button id="snapshot">Save revision</button></div><article id="editor" contenteditable="true" spellcheck="true" aria-label="Manuscript editor" data-placeholder="The story begins…"></article></section>
-<aside class="right"><h2>Scene details</h2><label>Point of view<select id="pov"><option value="">Unassigned</option></select></label><label>POV structure<select id="povMode"><option value="single">Single POV</option><option value="dual">Dual POV</option></select></label><div class="heading"><h2>Characters</h2><button id="addCharacter">+</button></div><div id="characters"></div><div class="heading"><h2>Story Grimoire</h2><button id="openGrimoire" type="button" title="Open story encyclopedia">✧</button></div><p class="hint">Characters · Settings · Items · Plotlines · Lore</p><div class="heading"><h2>Notes</h2><button id="addNote">+</button></div><div id="notes"></div><p class="hint">Changes save automatically after a short pause. Use Save revision to preserve a checkpoint.</p></aside></main>
-<dialog id="grimoireDialog" aria-labelledby="grimoireTitle"><div class="grimoireHead"><div><small>✦ THE STORY GRIMOIRE</small><h2 id="grimoireTitle">Worldbuilding Archive</h2><p>Keep the world beside the words.</p></div><button id="closeGrimoire" type="button" aria-label="Close grimoire">✕</button></div><div class="grimoireTabs" role="tablist" aria-label="Story categories"><button type="button" data-category="characters">Characters</button><button type="button" data-category="settings">Settings</button><button type="button" data-category="items">Items</button><button type="button" data-category="plotlines">Plotlines</button><button type="button" data-category="lore">Lore</button></div><div class="grimoireBody"><div class="grimoireList"><button id="newEntry" type="button">＋ New entry</button><div id="grimoireEntries"></div></div><form id="grimoireForm"><label>Name<input id="entryName" required maxlength="160" placeholder="A name from your world"></label><label>Summary<textarea id="entrySummary" rows="3" placeholder="The essence of this entry"></textarea></label><label>Details<textarea id="entryDetails" rows="9" placeholder="History, secrets, motivations, connections…"></textarea></label><div class="actions"><button type="submit">Save entry</button><button id="deleteEntry" type="button">Delete</button></div><p id="grimoireNotice" class="hint"></p></form></div></dialog><div id="toast" role="status" aria-live="polite"></div></div><script type="module" src="./app.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#17121f">
+  <meta name="description" content="A private writing desk for stories, manuscripts, and imagined worlds.">
+  <title>The Witch’s Desk</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://esm.sh" crossorigin>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="The Witch’s Desk home">
+        <span class="brand-mark" aria-hidden="true">☾</span>
+        <span><strong>The Witch’s Desk</strong><small>A private room for stories</small></span>
+      </a>
+      <div class="topbar-center">
+        <span id="currentManuscript" class="current-manuscript">Your writing desk</span>
+      </div>
+      <div class="topbar-actions">
+        <span id="connectionState" class="connection-state"><i></i><span>Connecting</span></span>
+        <button id="searchButton" class="icon-button" type="button" title="Search this manuscript (Ctrl/Cmd+F)" aria-label="Search this manuscript">⌕</button>
+        <details class="menu-wrap">
+          <summary class="button secondary" aria-label="Manuscript tools">Tools <span aria-hidden="true">⌄</span></summary>
+          <div class="menu-card">
+            <button type="button" data-export="docx">Export manuscript as Word (.docx)</button>
+            <button type="button" data-export="html">Export manuscript as HTML</button>
+            <button type="button" data-export="markdown">Export manuscript as Markdown</button>
+            <button type="button" data-export="print">Print / save as PDF</button>
+            <hr>
+            <button id="backupButton" type="button">Download manuscript backup</button>
+            <button id="importButton" type="button">Restore from backup file</button>
+          </div>
+        </details>
+        <details class="menu-wrap">
+          <summary class="avatar-button" aria-label="Account and writing settings">✦</summary>
+          <div class="menu-card menu-card-right">
+            <p id="accountLabel" class="menu-caption"></p>
+            <label class="menu-label">Writing typeface
+              <select id="fontChoice">
+                <option value="serif">Literary serif</option>
+                <option value="sans">Clean sans</option>
+                <option value="mono">Typewriter</option>
+              </select>
+            </label>
+            <label class="menu-label">Text size
+              <select id="fontSizeChoice">
+                <option value="17">Small</option>
+                <option value="18">Comfortable</option>
+                <option value="20">Large</option>
+                <option value="22">Extra large</option>
+              </select>
+            </label>
+            <button id="focusButton" type="button">Enter focus mode</button>
+            <button id="settingsButton" type="button">Connection settings</button>
+            <button id="signout" type="button">Sign out</button>
+          </div>
+        </details>
+      </div>
+    </header>
+
+    <section id="setupView" class="center-screen" hidden>
+      <div class="auth-card">
+        <div class="ornament" aria-hidden="true">✦</div>
+        <p class="eyebrow">THE WITCH’S DESK</p>
+        <h1>Connect your writing room</h1>
+        <p class="muted">Use the project URL and public publishable key for the existing Quest Board project. A service-role or secret key must never be used here.</p>
+        <form id="configForm">
+          <label>Supabase project URL<input id="projectUrl" type="url" placeholder="https://your-project.supabase.co" required></label>
+          <label>Publishable key<input id="publishableKey" autocomplete="off" required></label>
+          <button class="button primary full" type="submit">Save connection</button>
+          <button id="cancelSettings" class="button secondary full" type="button" hidden>Cancel</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="authView" class="center-screen" hidden>
+      <div class="auth-card">
+        <div class="ornament" aria-hidden="true">✦</div>
+        <p class="eyebrow">JESS’S PRIVATE WRITING ROOM</p>
+        <h1>Welcome back</h1>
+        <p class="muted">Sign in to open your manuscripts and story worlds.</p>
+        <form id="signInForm">
+          <label>Email<input id="email" type="email" autocomplete="username" required></label>
+          <label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+          <button class="button primary full" type="submit">Enter the desk</button>
+        </form>
+        <button id="resetPassword" class="text-button" type="button">Send a password reset email</button>
+        <p id="authMessage" class="form-message" role="status" aria-live="polite"></p>
+        <p class="privacy-note">This room uses private sign-in. Manuscripts are stored in the owner-protected Witch’s Desk database schema.</p>
+      </div>
+    </section>
+
+    <main id="desk" class="desk" hidden>
+      <aside id="leftSidebar" class="sidebar left-sidebar" aria-label="Manuscript navigation">
+        <div class="sidebar-heading">
+          <div><p class="eyebrow">YOUR LIBRARY</p><h2>Manuscripts</h2></div>
+          <button id="newBookButton" class="round-button" type="button" title="Create manuscript" aria-label="Create manuscript">＋</button>
+        </div>
+        <div class="book-picker">
+          <select id="bookSelect" aria-label="Choose manuscript"></select>
+          <button id="bookOptions" class="small-icon-button" type="button" title="Manuscript options" aria-label="Manuscript options">•••</button>
+          <div id="bookMenu" class="inline-menu" hidden>
+            <button type="button" data-book-action="rename">Rename manuscript</button>
+            <button type="button" data-book-action="description">Edit description</button>
+            <button type="button" data-book-action="delete" class="danger-text">Delete manuscript</button>
+          </div>
+        </div>
+        <p id="bookDescription" class="book-description"></p>
+        <div class="section-heading"><h3>Chapters</h3><button id="newChapterButton" class="small-icon-button" type="button" title="Add chapter" aria-label="Add chapter">＋</button></div>
+        <nav id="chapterList" class="tree-list" aria-label="Chapters"></nav>
+        <div class="section-heading"><h3>Scenes</h3><button id="newSceneButton" class="small-icon-button" type="button" title="Add scene" aria-label="Add scene">＋</button></div>
+        <nav id="sceneList" class="tree-list scene-list" aria-label="Scenes"></nav>
+        <div class="sidebar-bottom">
+          <button id="openWorldButton" class="world-launch" type="button"><span aria-hidden="true">✧</span><span><strong>Story Grimoire</strong><small>Characters, places, plots & lore</small></span><span class="launch-arrow">›</span></button>
+          <div class="sync-footnote"><span id="syncStatus">Changes sync to your private desk</span></div>
+        </div>
+      </aside>
+
+      <section class="writing-column" aria-label="Writing area">
+        <div class="document-toolbar">
+          <div class="title-line">
+            <div class="crumbs"><span id="chapterCrumb">Choose a chapter</span><span aria-hidden="true">/</span><span id="sceneCrumb">Choose a scene</span></div>
+            <input id="sceneTitle" class="scene-title" aria-label="Scene title" placeholder="Untitled scene" maxlength="240" disabled>
+            <div class="title-actions">
+              <span id="saveState" class="save-state">Ready</span>
+              <button id="saveButton" class="button secondary save-button" type="button" disabled>Save now</button>
+            </div>
+          </div>
+          <div class="toolbar-row" role="toolbar" aria-label="Text formatting">
+            <button type="button" data-command="undo" title="Undo (Ctrl/Cmd+Z)" aria-label="Undo">↶</button>
+            <button type="button" data-command="redo" title="Redo (Ctrl/Cmd+Shift+Z)" aria-label="Redo">↷</button>
+            <span class="toolbar-divider"></span>
+            <button type="button" data-command="bold" title="Bold (Ctrl/Cmd+B)" aria-label="Bold"><strong>B</strong></button>
+            <button type="button" data-command="italic" title="Italic (Ctrl/Cmd+I)" aria-label="Italic"><em>I</em></button>
+            <button type="button" data-command="underline" title="Underline (Ctrl/Cmd+U)" aria-label="Underline"><u>U</u></button>
+            <button type="button" data-command="strike" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+            <button type="button" data-command="highlight" title="Highlight" aria-label="Highlight">▨</button>
+            <span class="toolbar-divider"></span>
+            <select id="blockStyle" aria-label="Paragraph style">
+              <option value="paragraph">Body text</option>
+              <option value="heading1">Heading 1</option>
+              <option value="heading2">Heading 2</option>
+              <option value="heading3">Heading 3</option>
+            </select>
+            <button type="button" data-command="bulletList" title="Bulleted list" aria-label="Bulleted list">• List</button>
+            <button type="button" data-command="orderedList" title="Numbered list" aria-label="Numbered list">1. List</button>
+            <button type="button" data-command="blockquote" title="Block quote" aria-label="Block quote">❝</button>
+            <span class="toolbar-divider"></span>
+            <button type="button" data-command="alignLeft" title="Align left" aria-label="Align left">⇤</button>
+            <button type="button" data-command="alignCenter" title="Align center" aria-label="Align center">↔</button>
+            <button type="button" data-command="alignRight" title="Align right" aria-label="Align right">⇥</button>
+            <button type="button" id="linkButton" title="Insert or edit link" aria-label="Insert or edit link">↗</button>
+            <button type="button" id="clearFormatButton" title="Clear formatting" aria-label="Clear formatting">Tx</button>
+          </div>
+        </div>
+        <div class="page-stage">
+          <div id="editor" class="paper-editor" aria-label="Manuscript text" spellcheck="true"></div>
+          <div id="emptyState" class="empty-state">
+            <span class="empty-moon" aria-hidden="true">☾</span>
+            <h2>A quiet page is waiting</h2>
+            <p>Create a manuscript, chapter, and scene to begin writing.</p>
+            <button id="emptyCreateButton" class="button primary" type="button">Create a manuscript</button>
+          </div>
+        </div>
+        <footer class="editor-footer">
+          <span id="wordCount">0 words</span>
+          <span class="footer-separator">·</span>
+          <span id="characterCount">0 characters</span>
+          <span class="footer-spacer"></span>
+          <span id="povFooter">POV unassigned</span>
+          <span class="footer-separator">·</span>
+          <span>Ctrl/Cmd + S to save</span>
+        </footer>
+      </section>
+
+      <aside id="rightSidebar" class="sidebar right-sidebar" aria-label="Scene and story tools">
+        <div class="inspector-tabs" role="tablist" aria-label="Inspector panels">
+          <button type="button" class="active" data-inspector="scene" role="tab" aria-selected="true">Scene</button>
+          <button type="button" data-inspector="notes" role="tab" aria-selected="false">Notes</button>
+          <button type="button" data-inspector="outline" role="tab" aria-selected="false">Outline</button>
+        </div>
+        <section id="sceneInspector" class="inspector-panel">
+          <p class="eyebrow">SCENE DETAILS</p>
+          <label>Point of view<select id="povSelect" disabled><option value="">Unassigned</option></select></label>
+          <label>POV structure<select id="povModeSelect" disabled><option value="single">Single point of view</option><option value="dual">Dual point of view</option></select></label>
+          <div class="stat-card"><span id="sceneStatWords">0</span><small>words in this scene</small></div>
+          <div class="inspector-actions">
+            <button id="checkpointButton" class="button secondary full" type="button" disabled>Save revision checkpoint</button>
+            <button id="revisionsButton" class="text-button full" type="button" disabled>View revision history</button>
+          </div>
+          <div class="divider"></div>
+          <p class="hint">Scenes save to your private cloud desk as you write. If the connection drops, a local recovery draft is kept in this browser and sync resumes when you reconnect.</p>
+        </section>
+        <section id="notesInspector" class="inspector-panel" hidden>
+          <div class="section-heading"><div><p class="eyebrow">WRITER’S NOTEBOOK</p><h2>Notes</h2></div><button id="newNoteButton" class="small-icon-button" type="button" title="New note">＋</button></div>
+          <div id="notesList" class="notes-list"></div>
+          <div id="noteEditor" class="note-editor" hidden>
+            <label>Title<input id="noteTitle" maxlength="160" placeholder="A note to future you"></label>
+            <label>Note<textarea id="noteBody" rows="8" placeholder="Capture a detail, question, or thought…"></textarea></label>
+            <div class="note-actions"><button id="saveNoteButton" class="button primary" type="button">Save note</button><button id="deleteNoteButton" class="button danger-quiet" type="button">Delete</button></div>
+          </div>
+          <p id="notesEmpty" class="hint">Keep research, questions, and stray ideas beside the manuscript.</p>
+        </section>
+        <section id="outlineInspector" class="inspector-panel" hidden>
+          <p class="eyebrow">IN THIS SCENE</p>
+          <h2>Outline</h2>
+          <nav id="documentOutline" class="outline-list" aria-label="Scene headings"></nav>
+          <p id="outlineEmpty" class="hint">Add a heading in the manuscript to build a quick scene outline.</p>
+          <div class="divider"></div>
+          <p class="eyebrow">MANUSCRIPT</p>
+          <div class="book-stat-row"><span>Total words</span><strong id="bookWordCount">0</strong></div>
+          <div class="book-stat-row"><span>Chapters</span><strong id="bookChapterCount">0</strong></div>
+          <div class="book-stat-row"><span>Scenes</span><strong id="bookSceneCount">0</strong></div>
+        </section>
+      </aside>
+    </main>
+
+    <dialog id="promptDialog" class="modal small-modal">
+      <form id="promptForm" method="dialog">
+        <div class="modal-head"><div><p class="eyebrow">THE WITCH’S DESK</p><h2 id="promptTitle">Name this</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+        <label id="promptLabelWrap"><span id="promptLabel">Name</span><input id="promptInput" maxlength="240" required></label>
+        <label id="promptTextareaWrap" hidden><span id="promptTextareaLabel">Details</span><textarea id="promptTextarea" rows="5"></textarea></label>
+        <div class="modal-actions"><button class="button secondary" value="cancel">Cancel</button><button id="promptSubmit" class="button primary" value="ok">Save</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDialog" class="modal small-modal">
+      <form id="confirmForm" method="dialog">
+        <div class="modal-head"><div><p class="eyebrow">A CAREFUL MOMENT</p><h2 id="confirmTitle">Please confirm</h2></div></div>
+        <p id="confirmMessage" class="muted"></p>
+        <div class="modal-actions"><button class="button secondary" value="cancel">Keep it</button><button id="confirmSubmit" class="button danger" value="ok">Continue</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="linkDialog" class="modal small-modal">
+      <form id="linkForm" method="dialog">
+        <div class="modal-head"><div><p class="eyebrow">MANUSCRIPT LINK</p><h2>Insert a link</h2></div><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+        <label>Web address<input id="linkUrl" type="text" inputmode="url" autocapitalize="off" placeholder="https://example.com" required></label>
+        <p class="hint">Only secure web links, email addresses, and phone links are accepted.</p>
+        <div class="modal-actions"><button id="removeLinkButton" class="text-button" type="button">Remove link</button><span class="footer-spacer"></span><button class="button secondary" value="cancel">Cancel</button><button class="button primary" value="ok">Apply link</button></div>
+      </form>
+    </dialog>
+
+      <dialog id="searchDialog" class="modal search-modal">
+      <form method="dialog" class="search-head"><div><p class="eyebrow">MANUSCRIPT SEARCH</p><h2>Find in this story</h2></div><button class="icon-button" value="cancel" aria-label="Close search">×</button></form>
+      <div class="search-controls"><input id="searchInput" type="search" placeholder="Search words, names, or phrases…" autocomplete="off"><label class="check-label"><input id="matchCase" type="checkbox"> Match case</label></div>
+      <div class="replace-controls"><input id="replaceInput" type="text" placeholder="Replace with…" aria-label="Replacement text"><button id="replaceNextButton" class="button secondary" type="button">Replace in scene</button><button id="replaceAllButton" class="button secondary" type="button">Replace all in scene</button></div>
+      <div id="searchResults" class="search-results"><p class="hint">Search across every chapter and scene in this manuscript.</p></div>
+      <div class="modal-actions"><button id="searchAgainButton" class="button secondary" type="button">Search</button><span class="footer-spacer"></span><button class="button secondary" value="cancel">Close</button></div>
+    </dialog>
+
+    <dialog id="revisionsDialog" class="modal revision-modal">
+      <div class="modal-head"><div><p class="eyebrow">MANUSCRIPT HISTORY</p><h2>Revision checkpoints</h2><p id="revisionSceneName" class="muted"></p></div><button id="closeRevisions" class="icon-button" type="button" aria-label="Close revision history">×</button></div>
+      <div id="revisionList" class="revision-list"></div>
+      <div class="modal-actions"><button id="revisionSaveButton" class="button primary" type="button">Save checkpoint now</button><span class="footer-spacer"></span><button id="closeRevisions2" class="button secondary" type="button">Done</button></div>
+    </dialog>
+
+    <dialog id="worldDialog" class="modal world-modal">
+      <div class="world-header">
+        <div><p class="eyebrow">✦ STORY GRIMOIRE</p><h2>Keep the world beside the words</h2><p class="muted">An interconnected archive for people, places, objects, plotlines, and lore.</p></div>
+        <button id="closeWorld" class="icon-button" type="button" aria-label="Close story grimoire">×</button>
+      </div>
+      <div class="world-tabs" role="tablist" aria-label="Worldbuilding category">
+        <button type="button" class="active" data-world-cat="characters">Characters</button>
+        <button type="button" data-world-cat="settings">Settings</button>
+        <button type="button" data-world-cat="items">Items</button>
+        <button type="button" data-world-cat="plotlines">Plotlines</button>
+        <button type="button" data-world-cat="lore">Lore</button>
+      </div>
+      <div class="world-layout">
+        <div class="world-list-column">
+          <div class="world-search"><input id="worldSearch" type="search" placeholder="Find an entry" aria-label="Find a story entry"><button id="newWorldEntry" class="button secondary" type="button">＋ New</button></div>
+          <div id="worldEntryList" class="world-entry-list"></div>
+          <p id="worldListEmpty" class="hint" hidden>No entries in this category yet.</p>
+        </div>
+        <div class="world-detail-column">
+          <form id="worldEntryForm">
+            <label>Name<input id="worldName" maxlength="180" required placeholder="Name this entry"></label>
+            <label>Summary<textarea id="worldSummary" rows="3" placeholder="A short description"></textarea></label>
+            <label>Details<textarea id="worldDetails" rows="7" placeholder="History, motivations, secrets, sensory details…"></textarea></label>
+            <div class="world-form-actions"><button class="button primary" type="submit">Save entry</button><button id="deleteWorldEntry" class="button danger-quiet" type="button" disabled>Delete</button></div>
+          </form>
+          <div class="divider"></div>
+          <div class="relationship-head"><div><p class="eyebrow">CONNECTIONS</p><h3>Relationships</h3></div></div>
+          <form id="linkEntryForm" class="link-entry-form">
+            <select id="linkTarget" aria-label="Related story entry"></select>
+            <input id="linkRelation" maxlength="120" placeholder="is connected to" aria-label="Relationship description">
+            <button class="button secondary" type="submit">Link</button>
+          </form>
+          <div id="worldRelationships" class="relationships-list"></div>
+          <p id="worldNotice" class="hint" aria-live="polite"></p>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="conflictDialog" class="modal small-modal">
+      <div class="modal-head"><div><p class="eyebrow">ANOTHER DEVICE SAVED</p><h2>This scene has changed</h2></div></div>
+      <p id="conflictMessage" class="muted">A newer version is in your private desk.</p>
+      <p class="hint">Your current writing is safely kept as a local recovery draft. Choose which version should become the cloud copy.</p>
+      <div class="modal-actions conflict-actions"><button id="useRemoteButton" class="button secondary" type="button">Use cloud version</button><button id="keepLocalButton" class="button primary" type="button">Keep my version</button></div>
+    </dialog>
+
+    <dialog id="passwordDialog" class="modal small-modal">
+      <form id="passwordUpdateForm" method="dialog">
+        <div class="modal-head"><div><p class="eyebrow">ACCOUNT SECURITY</p><h2>Choose a new password</h2></div></div>
+        <label>New password<input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirm password<input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+        <p id="passwordUpdateMessage" class="form-message" role="status"></p>
+        <div class="modal-actions"><button class="button secondary" value="cancel">Cancel</button><button id="updatePasswordButton" class="button primary" value="ok">Update password</button></div>
+      </form>
+    </dialog>
+
+    <input id="backupFile" type="file" accept="application/json,.json" hidden>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="liveAnnounce" class="sr-only" aria-live="polite"></div>
+  </div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
