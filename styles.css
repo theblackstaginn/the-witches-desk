@@ -192,3 +192,69 @@ body::before,body::after{display:none}
   .brand strong{width:190px;height:48px}
   body{background-attachment:scroll}
 }
+
+
+/* Witch's Desk production artwork integration - visual layer only */
+body{
+  background:
+    linear-gradient(90deg,rgba(10,5,16,.38),rgba(10,5,16,.12) 50%,rgba(10,5,16,.38)),
+    url("./assets/backgrounds/witches-desk-study-bg.png") center center / cover fixed no-repeat,
+    #100918;
+}
+body:before,body:after{display:none}
+.topbar{
+  background:
+    linear-gradient(180deg,rgba(10,5,17,.88),rgba(24,9,32,.94)),
+    url("./assets/textures/plum-embossed.png") center/cover;
+}
+.brand strong{
+  color:transparent;
+  font-size:0;
+  width:300px;height:55px;
+  background:url("./assets/branding/witches-desk-wordmark.png") left center/contain no-repeat;
+  display:block;
+}
+.module{position:relative;background:linear-gradient(180deg,rgba(37,14,49,.65),rgba(13,6,23,.7));}
+.module span{font-size:0;width:28px;height:28px;background-position:center;background-repeat:no-repeat;background-size:contain;}
+.module:nth-child(1) span{background-image:url("./assets/nav/icon-write.png")}
+.module:nth-child(2) span{background-image:url("./assets/nav/icon-projects.png")}
+.module:nth-child(3) span{background-image:url("./assets/nav/icon-world.png")}
+.module:nth-child(4) span{background-image:url("./assets/nav/icon-characters.png")}
+.module:nth-child(5) span{background-image:url("./assets/nav/icon-locations.png")}
+.module:nth-child(6) span{background-image:url("./assets/nav/icon-items.png")}
+.module:nth-child(7) span{background-image:url("./assets/nav/icon-plots.png")}
+.module:nth-child(8) span{background-image:url("./assets/nav/icon-lore.png")}
+.module:nth-child(9) span{background-image:url("./assets/nav/icon-notes.png")}
+.module:nth-child(10) span{background-image:url("./assets/nav/icon-research.png")}
+.module:nth-child(11) span{background-image:url("./assets/nav/icon-vault.png")}
+.leftRail,.rightRail{
+  background:
+    linear-gradient(rgba(16,7,24,.83),rgba(15,7,23,.91)),
+    url("./assets/textures/leather.png") center/420px repeat;
+  backdrop-filter:blur(8px);
+}
+.railSection,.inspectorCard{
+  background:
+    linear-gradient(rgba(32,13,42,.80),rgba(18,8,26,.91)),
+    url("./assets/textures/plum-embossed.png") center/cover;
+  box-shadow:inset 0 1px rgba(255,215,140,.1),0 8px 22px rgba(0,0,0,.3);
+}
+.editorShell{
+  background:
+    linear-gradient(rgba(12,6,18,.60),rgba(12,6,18,.72)),
+    url("./assets/textures/purple-gold-marble.png") center/cover;
+}
+.paperStage{background:transparent}
+#editor{
+  background:
+    linear-gradient(rgba(255,247,224,.12),rgba(255,247,224,.12)),
+    url("./assets/parchment/parchment-editor.png") center top/100% 100% no-repeat,
+    #efdbb4;
+  color:#281b25;
+  box-shadow:0 14px 50px rgba(0,0,0,.58);
+}
+.documentTabs,.editorMenus,.toolbar,.statusBar{
+  backdrop-filter:blur(8px);
+}
+@media(max-width:1080px){.brand strong{width:240px;height:48px}}
+@media(max-width:760px){.brand strong{width:190px;height:44px}}
