@@ -461,99 +461,377 @@ window.addEventListener('keydown',e=>{
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
 
-// Workspace navigation wiring - 2026-11-12
-function activateModule(button){
-  document.querySelectorAll('.module').forEach(node=>node.classList.toggle('active',node===button));
+// Fully functional navigation and editor menus - 2026-11-12
+let selectedDeskNote=null;
+let lastEditorRange=null;
+const deskMenu=$('deskMenu');
+const menuTriggers=[...document.querySelectorAll('.menuTrigger')];
+
+document.addEventListener('selectionchange',()=>{
+  const selection=window.getSelection();
+  if(selection&&selection.rangeCount&&$('editor').contains(selection.anchorNode)){
+    lastEditorRange=selection.getRangeAt(0).cloneRange();
+  }
+});
+function focusManuscript(){
+  if(!scene)return false;
+  $('editor').focus();
+  if(lastEditorRange){
+    try{
+      if($('editor').contains(lastEditorRange.startContainer)&&$('editor').contains(lastEditorRange.endContainer)){
+        const selection=window.getSelection();
+        selection.removeAllRanges();selection.addRange(lastEditorRange);
+      }
+    }catch(e){lastEditorRange=null}
+  }
+  return true;
+}
+function editorCommand(command,value=null){
+  if(!scene){toast('Create a scene first');return}
+  focusManuscript();
+  document.execCommand(command,false,value);
+  changed();
+}
+function editorBlock(tag){
+  if(!scene){toast('Create a scene first');return}
+  focusManuscript();
+  document.execCommand('formatBlock',false,tag);
+  changed();
+}
+function activateModule(name){
+  document.querySelectorAll('[data-module]').forEach(node=>{
+    const active=node.dataset.module===name;
+    node.classList.toggle('active',active);
+    node.setAttribute('aria-current',active?'page':'false');
+  });
 }
 function openStoryCategory(category){
-  if(!book){toast('Choose or create a manuscript first');return}
+  if(!book){toast('Create a manuscript first');return}
   grimoireCategory=category;grimoireSelected=null;grimoireOpen();
 }
-function openNotesPanel(){
-  const panel=$('notes').closest('.inspectorCard');
-  if(panel&&getComputedStyle(panel).display!=='none'){
-    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-    $('addNote').focus();
-  }else{
-    $('addNote').click();
+function openDeskProjects(){
+  renderDeskProjects();
+  $('projectsDialog').showModal();
+}
+function renderDeskProjects(){
+  const root=$('deskProjectList');
+  root.replaceChildren();
+  if(!books.length){const p=document.createElement('p');p.className='hint';p.textContent='No manuscripts yet. Create your first book to begin.';root.append(p)}
+  books.forEach(b=>{
+    const button=document.createElement('button');
+    button.type='button';button.className='deskProjectItem';
+    if(b.id===book?.id)button.classList.add('current');
+    const name=document.createElement('strong');name.textContent=b.title;
+    const indicator=document.createElement('span');indicator.textContent=b.id===book?.id?'Currently open':'Open manuscript';
+    button.append(name,indicator);
+    button.onclick=async()=>{
+      try{
+        await saveNow();
+        book=books.find(item=>item.id===b.id);
+        chapter=null;scene=null;await loadBook();
+        $('books').value=book.id;
+        renderDeskProjects();
+        $('projectsDialog').close();activateModule('write');
+        toast('Opened '+book.title);
+      }catch(e){handleError(e)}
+    };
+    root.append(button);
+  });
+}
+$('newDeskProject').onclick=()=>{$('projectsDialog').close();$('addBook').click()};
+$('renameDeskProject').onclick=()=>{$('projectsDialog').close();$('renameBook').click()};
+
+function renderDeskNotes(){
+  const root=$('deskNotesList');root.replaceChildren();
+  const visibleNotes=notes.filter(n=>n.category!=='grimoire');
+  if(!visibleNotes.length){const hint=document.createElement('p');hint.className='hint';hint.textContent='No notes yet.';root.append(hint)}
+  for(const n of visibleNotes){
+    const button=document.createElement('button');button.type='button';
+    button.className=n.id===selectedDeskNote?'selected':'';
+    button.textContent=n.title||'Untitled Note';
+    button.onclick=()=>selectDeskNote(n.id);
+    root.append(button);
   }
 }
-document.querySelectorAll('.module').forEach(button=>{
-  const name=button.textContent.trim().toLowerCase();
-  button.addEventListener('click',async()=>{
-    try{
-      if(name!=='write'&&dirty)await saveNow();
-      if(name==='write'){
-        activateModule(button);
-        $('editor').focus();
-      }else if(name==='projects'){
-        activateModule(button);
-        $('books').focus();
-        $('books').closest('.projectPicker')?.scrollIntoView({block:'nearest'});
-      }else if(name==='world'||name==='lore'){
-        activateModule(button);openStoryCategory('lore');
-      }else if(name==='characters'){
-        activateModule(button);openStoryCategory('characters');
-      }else if(name==='locations'){
-        activateModule(button);openStoryCategory('settings');
-      }else if(name==='items'){
-        activateModule(button);openStoryCategory('items');
-      }else if(name==='plots'){
-        activateModule(button);openStoryCategory('plotlines');
-      }else if(name==='notes'){
-        activateModule(button);openNotesPanel();
-      }else if(name==='research'){
-        $('searchOpen').click();
-      }else if(name==='vault'){
-        activateModule(button);$('exportDialog').showModal();
-      }
-    }catch(e){handleError(e)}
-  });
-});
-const railCategories={
-  'Development':'plotlines',
-  'Scenes':'scenes',
-  'Characters':'characters',
-  'Locations':'settings',
-  'Items & Artifacts':'items',
-  'Factions':'lore',
-  'Magic System':'lore',
-  'Creatures & Races':'lore',
-  'Timeline':'plotlines',
-  'Plot Outline':'plotlines',
-  'Research':'research',
-  'Templates':'lore'
+function selectDeskNote(id){
+  selectedDeskNote=id;
+  const note=notes.find(n=>n.id===id);
+  $('deskNoteTitle').value=note?.title||'';
+  $('deskNoteBody').value=note?.body||'';
+  $('deleteDeskNote').disabled=!note;
+  $('deskNoteStatus').textContent=note?'Editing saved note':'New note, not yet saved';
+  renderDeskNotes();
+}
+function openDeskNotes(){
+  if(!book){toast('Create a manuscript first');return}
+  selectedDeskNote=null;
+  selectDeskNote(notes.find(n=>n.category!=='grimoire')?.id||null);
+  $('deskNotesDialog').showModal();
+}
+$('newDeskNote').onclick=()=>{selectDeskNote(null);$('deskNoteTitle').focus()};
+$('deskNoteForm').onsubmit=async e=>{
+  e.preventDefault();
+  if(!book)return;
+  const title=$('deskNoteTitle').value.trim();
+  const body=$('deskNoteBody').value;
+  if(!title)return;
+  try{
+    await saveNow();
+    if(selectedDeskNote){
+      await query(db('notes').update({title,body,updated_at:new Date().toISOString()}).eq('id',selectedDeskNote).eq('book_id',book.id));
+    }else{
+      const record=await query(db('notes').insert({book_id:book.id,category:'general',title,body}).select().single());
+      selectedDeskNote=record.id;
+    }
+    notes=await query(db('notes').select('*').eq('book_id',book.id).order('updated_at',{ascending:false}));
+    renderNotes();selectDeskNote(selectedDeskNote);
+    $('deskNoteStatus').textContent='Saved to this manuscript';
+    toast('Note saved');
+  }catch(err){handleError(err);$('deskNoteStatus').textContent='Save failed'}
 };
-document.querySelectorAll('.railLink').forEach(button=>{
-  if(button.id==='openCharactersRail')return;
-  button.addEventListener('click',async()=>{
-    try{
-      const label=button.textContent.trim().replace(/^[^A-Za-z]+/,'').trim();
-      const category=railCategories[label];
-      if(category==='research'){$('searchOpen').click();return}
-      if(category==='scenes'){$('scenes').scrollIntoView({behavior:'smooth',block:'nearest'});return}
-      if(dirty)await saveNow();
-      if(category)openStoryCategory(category);
-    }catch(e){handleError(e)}
-  });
-});
-$('openCharacters').onclick=()=>openStoryCategory('characters');
-$('openCharactersRail').onclick=()=>openStoryCategory('characters');
-const focusButton=document.querySelector('.focusMode');
-focusButton?.addEventListener('click',()=>{
+$('deleteDeskNote').onclick=async()=>{
+  if(!book||!selectedDeskNote)return;
+  if(!confirm('Delete this note?'))return;
+  try{
+    await query(db('notes').delete().eq('id',selectedDeskNote).eq('book_id',book.id));
+    notes=await query(db('notes').select('*').eq('book_id',book.id).order('updated_at',{ascending:false}));
+    renderNotes();selectDeskNote(null);
+    toast('Note deleted');
+  }catch(e){handleError(e)}
+};
+async function openDeskSearch(){
+  if(!book){toast('Create a manuscript first');return}
+  await saveNow();
+  $('searchQuery').value='';
+  $('searchResults').innerHTML='<p class="hint">Type to search this manuscript.</p>';
+  if(!$('searchDialog').open)$('searchDialog').showModal();
+  $('searchQuery').focus();
+}
+function showDeskExport(){
+  if(!book){toast('Create a manuscript first');return}
+  if(!$('exportDialog').open)$('exportDialog').showModal();
+}
+function showDeskHelp(){
+  $('deskHelpDialog').showModal();
+}
+function toggleDeskFocus(){
   const active=$('workspace').classList.toggle('writingFocus');
   focusButton.setAttribute('aria-pressed',String(active));
   focusButton.textContent=active?'☾ Exit Focus':'☾ Focus Mode';
-  $('editor').focus();
+  if(scene)$('editor').focus();
+}
+function toggleDeskFullscreen(){
+  if(document.fullscreenElement)return document.exitFullscreen();
+  return $('workspace').requestFullscreen();
+}
+async function openDeskSection(name){
+  if(name!=='write'&&dirty)await saveNow();
+  if(name==='write'){
+    activateModule('write');
+    if(scene)$('editor').focus();
+    else toast('Create a manuscript and scene to start writing');
+    return;
+  }
+  if(name==='projects'){activateModule(name);openDeskProjects();return}
+  if(name==='notes'){activateModule(name);openDeskNotes();return}
+  if(name==='research'){activateModule(name);await openDeskSearch();return}
+  if(name==='vault'){activateModule(name);showDeskExport();return}
+  const category={
+    world:'lore',
+    characters:'characters',
+    locations:'settings',
+    items:'items',
+    plots:'plotlines',
+    lore:'lore'
+  }[name];
+  if(category){
+    activateModule(name);
+    openStoryCategory(category);
+  }
+}
+document.querySelectorAll('[data-module]').forEach(button=>{
+  const name=button.dataset.module;
+  // Research already has its own click handler; keep only that handler.
+  if(name==='research')return;
+  button.addEventListener('click',()=>openDeskSection(name).catch(handleError));
 });
-document.querySelector('.fullscreenButton')?.addEventListener('click',async()=>{
-  try{
-    if(document.fullscreenElement)await document.exitFullscreen();
-    else await $('workspace').requestFullscreen();
-  }catch(e){handleError(e)}
+// Preserve and upgrade the existing working Research button.
+$('searchOpen').onclick=()=>openDeskSection('research').catch(handleError);
+$('openCharacters').onclick=null;
+$('openCharactersRail').onclick=()=>openDeskSection('characters').catch(handleError);
+const railCategoryActions={
+  scenes:'scenes',characters:'characters',settings:'locations',
+  items:'items',plotlines:'plots',lore:'lore',research:'research'
+};
+document.querySelectorAll('[data-rail]').forEach(button=>{
+  if(button.id==='openCharactersRail')return;
+  button.addEventListener('click',async()=>{
+    try{
+      const name=railCategoryActions[button.dataset.rail];
+      if(name==='scenes'){
+        activateModule('write');
+        $('scenes').scrollIntoView({behavior:'smooth',block:'nearest'});
+        if(scene)$('editor').focus();
+      }else if(name){await openDeskSection(name)}
+    }catch(err){handleError(err)}
+  });
 });
+const focusButton=document.querySelector('.focusMode');
+focusButton?.addEventListener('click',toggleDeskFocus);
+document.querySelector('.fullscreenButton')?.addEventListener('click',()=>Promise.resolve(toggleDeskFullscreen()).catch(handleError));
 document.querySelector('.newTab')?.addEventListener('click',()=>{$('addScene').click()});
-// The document strip contains one real editable scene tab; no placeholder-tab handlers.
-$('exportMenu').onclick=()=>$('exportDialog').showModal();
+$('exportMenu').onclick=showDeskExport;
+const notificationButton=document.querySelector('.headerActions .iconButton[title="Notifications"]');
+notificationButton?.addEventListener('click',()=>toast('The desk saves changes automatically. Check the status indicator for sync progress.'));
+const settingsButton=document.querySelector('.headerActions .iconButton[title="Settings"]');
+settingsButton?.addEventListener('click',showDeskHelp);
 
+// Keep formatting menus in sync with the existing rich-text editor.
+const formatSelect=document.querySelector('.formatSelect');
+const fontSelect=document.querySelector('.fontSelect');
+const sizeSelect=document.querySelector('.sizeSelect');
+formatSelect?.addEventListener('change',()=>editorBlock(formatSelect.value));
+fontSelect?.addEventListener('change',()=>editorCommand('fontName',fontSelect.value));
+sizeSelect?.addEventListener('change',()=>{
+  const sizes={'12':'2','14':'3','16':'4','18':'5'};
+  editorCommand('fontSize',sizes[sizeSelect.value]||'3');
+});
+const colorPicker=document.createElement('input');
+colorPicker.type='color';colorPicker.value='#2b2118';
+colorPicker.setAttribute('aria-label','Choose text color');
+colorPicker.className='deskColorPicker';
+document.querySelector('.toolbar .goldTool')?.after(colorPicker);
+document.querySelector('.toolbar .goldTool')?.addEventListener('click',()=>colorPicker.click());
+colorPicker.addEventListener('input',()=>editorCommand('foreColor',colorPicker.value));
+
+// The menu actions reuse manuscript handlers rather than implementing parallel saves.
+const deskMenuDefs={
+  file:[
+    ['New manuscript','new-book'],['New chapter','new-chapter'],['New scene','new-scene'],
+    ['Save changes','save'],['Rename manuscript','rename-book'],
+    ['Export & backup…','export'],['Print / Save PDF…','print']
+  ],
+  edit:[
+    ['Undo','undo'],['Redo','redo'],['Select all text','select-all'],
+    ['Bold','bold'],['Italic','italic'],['Underline','underline'],
+    ['Find & replace…','find']
+  ],
+  view:[
+    ['Focus mode','focus'],['Fullscreen','fullscreen'],
+    ['Toggle manuscript sidebar','left-rail'],['Toggle inspector sidebar','right-rail']
+  ],
+  insert:[
+    ['New paragraph','paragraph'],['Horizontal divider','rule'],
+    ['Bulleted list','bullets'],['Numbered list','numbered'],
+    ['Quotation','quote'],['Today’s date','date']
+  ],
+  format:[
+    ['Normal paragraph','style-p'],['Chapter title','style-h1'],
+    ['Section heading','style-h2'],['Block quote','style-quote'],
+    ['Align left','align-left'],['Align center','align-center'],
+    ['Align right','align-right'],['Clear formatting','clear-format']
+  ],
+  tools:[
+    ['Find & replace…','find'],['Search manuscript…','search'],
+    ['Save revision checkpoint','checkpoint'],['Revision history…','revisions'],
+    ['Word count','word-count']
+  ],
+  help:[
+    ['Writing guide & shortcuts','guide'],['About The Witch’s Desk','about']
+  ]
+};
+const editorOnlyMenuActions=new Set([
+  'undo','redo','select-all','bold','italic','underline','find','paragraph','rule','bullets','numbered','quote',
+  'date','style-p','style-h1','style-h2','style-quote','align-left','align-center','align-right','clear-format',
+  'checkpoint','revisions','word-count'
+]);
+function closeDeskMenu(){
+  deskMenu.hidden=true;
+  menuTriggers.forEach(button=>button.setAttribute('aria-expanded','false'));
+}
+function openDeskMenu(trigger){
+  if(!deskMenu.hidden&&trigger.getAttribute('aria-expanded')==='true'){closeDeskMenu();return}
+  deskMenu.replaceChildren();
+  const actions=deskMenuDefs[trigger.dataset.menu]||[];
+  for(const [label,action] of actions){
+    const item=document.createElement('button');
+    item.type='button';item.setAttribute('role','menuitem');
+    item.textContent=label;
+    item.disabled=editorOnlyMenuActions.has(action)&&!scene;
+    item.addEventListener('pointerdown',e=>e.preventDefault());
+    item.addEventListener('click',()=>{
+      closeDeskMenu();
+      Promise.resolve(runDeskMenuAction(action)).catch(handleError);
+    });
+    deskMenu.append(item);
+  }
+  menuTriggers.forEach(button=>button.setAttribute('aria-expanded',String(button===trigger)));
+  deskMenu.hidden=false;
+  const rect=trigger.getBoundingClientRect();
+  const width=deskMenu.getBoundingClientRect().width;
+  const left=Math.max(8,Math.min(rect.left,window.innerWidth-width-8));
+  deskMenu.style.left=left+'px';
+  deskMenu.style.top=Math.min(rect.bottom+4,window.innerHeight-deskMenu.offsetHeight-8)+'px';
+  deskMenu.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
+}
+menuTriggers.forEach(trigger=>{
+  trigger.addEventListener('click',()=>openDeskMenu(trigger));
+  trigger.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();openDeskMenu(trigger)}
+  });
+});
+document.addEventListener('pointerdown',e=>{
+  if(!deskMenu.hidden&&!deskMenu.contains(e.target)&&!e.target.closest('.menuTrigger'))closeDeskMenu();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!deskMenu.hidden){e.preventDefault();closeDeskMenu();return}
+  if(!deskMenu.hidden&&(e.key==='ArrowDown'||e.key==='ArrowUp')){
+    e.preventDefault();
+    const items=[...deskMenu.querySelectorAll('button:not(:disabled)')];
+    const position=items.indexOf(document.activeElement);
+    const index=(position+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;
+    items[index]?.focus();
+  }
+});
+async function runDeskMenuAction(action){
+  const via=id=>$(id)?.click();
+  switch(action){
+    case 'new-book':return via('addBook');
+    case 'new-chapter':return via('addChapter');
+    case 'new-scene':return via('addScene');
+    case 'save':await saveNow();toast('All changes saved');return;
+    case 'rename-book':return via('renameBook');
+    case 'export':return showDeskExport();
+    case 'print':return via('printManuscript');
+    case 'undo':return editorCommand('undo');
+    case 'redo':return editorCommand('redo');
+    case 'select-all':if(!scene)return;focusManuscript();document.execCommand('selectAll');return;
+    case 'bold':return editorCommand('bold');
+    case 'italic':return editorCommand('italic');
+    case 'underline':return editorCommand('underline');
+    case 'find':return via('findReplace');
+    case 'focus':return toggleDeskFocus();
+    case 'fullscreen':return toggleDeskFullscreen();
+    case 'left-rail':$('workspace').classList.toggle('hideLeftRail');return;
+    case 'right-rail':$('workspace').classList.toggle('hideRightRail');return;
+    case 'paragraph':return editorCommand('insertParagraph');
+    case 'rule':return editorCommand('insertHorizontalRule');
+    case 'bullets':return editorCommand('insertUnorderedList');
+    case 'numbered':return editorCommand('insertOrderedList');
+    case 'quote':case 'style-quote':return editorBlock('blockquote');
+    case 'date':return editorCommand('insertText',new Date().toLocaleDateString());
+    case 'style-p':return editorBlock('p');
+    case 'style-h1':return editorBlock('h1');
+    case 'style-h2':return editorBlock('h2');
+    case 'align-left':return editorCommand('justifyLeft');
+    case 'align-center':return editorCommand('justifyCenter');
+    case 'align-right':return editorCommand('justifyRight');
+    case 'clear-format':return editorCommand('removeFormat');
+    case 'search':return openDeskSearch();
+    case 'checkpoint':return via('snapshot');
+    case 'revisions':return via('revisions');
+    case 'word-count':return toast('Current scene: '+countWords($('editor').innerText).toLocaleString()+' words');
+    case 'guide':case 'about':return showDeskHelp();
+  }
+}
 init();
