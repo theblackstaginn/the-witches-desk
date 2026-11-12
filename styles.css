@@ -360,3 +360,82 @@ body:before,body:after{display:none}
   #workspace.writingFocus{display:block}
   #workspace.writingFocus .editorShell{width:100%}
 }
+
+
+/* Rotated parchment artwork, unchanged writing-frame width - 2026-11-12 */
+.paperStage{
+  display:flex;
+  justify-content:center;
+  align-items:stretch;
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  padding:12px 18px;
+}
+.parchmentFrame{
+  position:relative;
+  isolation:isolate;
+  container-type:size;
+  width:100%;
+  max-width:850px;
+  height:100%;
+  min-height:0;
+  overflow:hidden;
+  background:#efdbb4;
+  box-shadow:0 14px 45px rgba(0,0,0,.52);
+}
+/* Rotate only the decorative sheet, never the words or text cursor. */
+.parchmentFrame::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:50%;
+  left:50%;
+  width:100cqh;
+  height:100cqw;
+  transform:translate(-50%,-50%) rotate(90deg);
+  transform-origin:center;
+  background:url("./assets/parchment/parchment-editor.png") center / 100% 100% no-repeat;
+  pointer-events:none;
+}
+.parchmentFrame #editor{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:100%;
+  max-width:none;
+  height:100%;
+  min-height:0;
+  margin:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  box-sizing:border-box;
+  border:0;
+  border-image:none;
+  border-radius:0;
+  background:none;
+  background-image:none;
+  box-shadow:none;
+  padding:clamp(38px,6vw,70px) clamp(32px,6vw,75px);
+  scrollbar-width:thin;
+  scrollbar-color:rgba(107,65,112,.6) transparent;
+}
+.parchmentFrame #editor:not(:empty)::before,
+.parchmentFrame #editor::after{display:none}
+.parchmentFrame #editor:empty::before{
+  display:block;
+  position:static;
+  transform:none;
+  content:attr(data-placeholder);
+  color:#80664f;
+  font-size:18px;
+}
+@media(max-width:1080px){
+  .parchmentFrame #editor{padding:42px 36px}
+}
+@media(max-width:760px){
+  .paperStage{padding:8px}
+  .parchmentFrame{max-width:none}
+  .parchmentFrame #editor{padding:34px 24px;font-size:17px}
+}
