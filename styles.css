@@ -615,5 +615,5 @@ body:before,body:after{display:none}
   inset:0;
   pointer-events:none;
   background:url("./assets/branding/witches-desk-wordmark.png") left center / contain no-repeat;
-  clip-path:polygon(0 0,100% 0,100% 61%,42% 61%,42% 100%,0 100%);
+  clip-path:polygon(0 0,100% 0,100% 68%,42% 68%,42% 100%,0 100%);
 }
