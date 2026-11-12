@@ -610,7 +610,7 @@ body:before,body:after{display:none}
   height:72px;
   position:relative;
   overflow:hidden;
-  background:url("./assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png") center center / cover no-repeat!important;
+  background:url("./assets/A5E847ED-A110-473B-9D86-ABEB440D2003.png") left center / contain no-repeat!important;
   color:transparent;
   font-size:0;
   text-shadow:none;
