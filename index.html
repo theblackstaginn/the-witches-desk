@@ -15,17 +15,17 @@
       <strong>The Witch’s Desk</strong>
     </div>
     <nav class="moduleNav" aria-label="Workspace sections">
-      <button class="module active" type="button"><span>✒</span>Write</button>
-      <button class="module" type="button"><span>⚒</span>Projects</button>
-      <button class="module" type="button"><span>⌘</span>World</button>
-      <button class="module" type="button" id="openCharacters"><span>♟</span>Characters</button>
-      <button class="module" type="button"><span>⌾</span>Locations</button>
-      <button class="module" type="button"><span>❈</span>Items</button>
-      <button class="module" type="button"><span>⌁</span>Plots</button>
-      <button class="module" type="button"><span>▤</span>Lore</button>
-      <button class="module" type="button"><span>▥</span>Notes</button>
-      <button class="module" type="button" id="searchOpen" hidden><span>⤢</span>Research</button>
-      <button class="module" type="button"><span>▰</span>Vault</button>
+      <button class="module active" type="button" data-module="write"><span>✒</span>Write</button>
+      <button class="module" type="button" data-module="projects"><span>⚒</span>Projects</button>
+      <button class="module" type="button" data-module="world"><span>⌘</span>World</button>
+      <button class="module" type="button" id="openCharacters" data-module="characters"><span>♟</span>Characters</button>
+      <button class="module" type="button" data-module="locations"><span>⌾</span>Locations</button>
+      <button class="module" type="button" data-module="items"><span>❈</span>Items</button>
+      <button class="module" type="button" data-module="plots"><span>⌁</span>Plots</button>
+      <button class="module" type="button" data-module="lore"><span>▤</span>Lore</button>
+      <button class="module" type="button" data-module="notes"><span>▥</span>Notes</button>
+      <button class="module" type="button" id="searchOpen" hidden data-module="research"><span>⤢</span>Research</button>
+      <button class="module" type="button" data-module="vault"><span>▰</span>Vault</button>
     </nav>
     <div class="headerActions">
       <span id="status" class="syncPill">Ready</span>
@@ -87,18 +87,18 @@
 
       <section class="railSection worldTree">
         <div class="sectionTitle"><span>◉</span><h2>Worldbuilding</h2><span class="chev">⌄</span></div>
-        <button class="railLink">❧ Development</button>
-        <button class="railLink">▥ Scenes</button>
-        <button class="railLink" id="openCharactersRail">♟ Characters</button>
-        <button class="railLink">⌾ Locations</button>
-        <button class="railLink">◇ Items & Artifacts</button>
-        <button class="railLink">♜ Factions</button>
-        <button class="railLink">♏ Magic System</button>
-        <button class="railLink">♣ Creatures & Races</button>
-        <button class="railLink">▣ Timeline</button>
-        <button class="railLink">⌘ Plot Outline</button>
-        <button class="railLink">▥ Research</button>
-        <button class="railLink">▤ Templates</button>
+        <button class="railLink" data-rail="plotlines">❧ Development</button>
+        <button class="railLink" data-rail="scenes">▥ Scenes</button>
+        <button class="railLink" id="openCharactersRail" data-rail="characters">♟ Characters</button>
+        <button class="railLink" data-rail="settings">⌾ Locations</button>
+        <button class="railLink" data-rail="items">◇ Items & Artifacts</button>
+        <button class="railLink" data-rail="lore">♜ Factions</button>
+        <button class="railLink" data-rail="lore">♏ Magic System</button>
+        <button class="railLink" data-rail="lore">♣ Creatures & Races</button>
+        <button class="railLink" data-rail="plotlines">▣ Timeline</button>
+        <button class="railLink" data-rail="plotlines">⌘ Plot Outline</button>
+        <button class="railLink" data-rail="research">▥ Research</button>
+        <button class="railLink" data-rail="lore">▤ Templates</button>
       </section>
 
       <div class="leftUtility">
@@ -127,7 +127,15 @@
       </div>
 
       <div class="editorMenus">
-        <div class="menuWords"><span>File⌄</span><span>Edit⌄</span><span>View⌄</span><span>Insert⌄</span><span>Format⌄</span><span>Tools⌄</span><span>Help⌄</span></div>
+        <div class="menuWords" role="menubar" aria-label="Writing tools">
+          <button type="button" class="menuTrigger" data-menu="file" aria-haspopup="menu" aria-expanded="false">File <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="edit" aria-haspopup="menu" aria-expanded="false">Edit <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="view" aria-haspopup="menu" aria-expanded="false">View <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="insert" aria-haspopup="menu" aria-expanded="false">Insert <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="format" aria-haspopup="menu" aria-expanded="false">Format <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="tools" aria-haspopup="menu" aria-expanded="false">Tools <span aria-hidden="true">⌄</span></button>
+          <button type="button" class="menuTrigger" data-menu="help" aria-haspopup="menu" aria-expanded="false">Help <span aria-hidden="true">⌄</span></button>
+        </div>
         <button class="focusMode" type="button">☾ Focus Mode</button>
         <button class="fullscreenButton" type="button" title="Fullscreen">⛶</button>
       </div>
@@ -135,7 +143,10 @@
 
       <div class="toolbar" role="toolbar" aria-label="Formatting">
         <select class="formatSelect" aria-label="Paragraph style">
-          <option>Paragraph</option>
+          <option value="p">Paragraph</option>
+          <option value="h1">Title</option>
+          <option value="h2">Heading</option>
+          <option value="blockquote">Quote</option>
         </select>
         <select class="fontSelect" aria-label="Font">
           <option>Garamond</option>
@@ -217,6 +228,50 @@
       </section>
     </aside>
   </main>
+
+  <div id="deskMenu" class="deskMenu" role="menu" aria-label="Editor commands" hidden></div>
+
+  <dialog id="projectsDialog" aria-labelledby="projectsHeading">
+    <div class="dialogHead"><div><small>THE BOOKSHELF</small><h2 id="projectsHeading">Manuscript Projects</h2></div><button type="button" data-close="projectsDialog" aria-label="Close projects">✕</button></div>
+    <div class="dialogPad">
+      <p class="hint">Choose an existing book or begin a new manuscript.</p>
+      <div id="deskProjectList" class="deskProjectList"></div>
+      <div class="actions">
+        <button id="newDeskProject" type="button">＋ New manuscript</button>
+        <button id="renameDeskProject" type="button">Rename active manuscript</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="deskNotesDialog" aria-labelledby="deskNotesHeading">
+    <div class="dialogHead"><div><small>WRITER'S NOTES</small><h2 id="deskNotesHeading">Notes &amp; Fragments</h2></div><button type="button" data-close="deskNotesDialog" aria-label="Close notes">✕</button></div>
+    <div class="dialogPad deskNotesLayout">
+      <div class="deskNotesIndex">
+        <button id="newDeskNote" type="button">＋ New note</button>
+        <div id="deskNotesList" class="deskNotesList"></div>
+      </div>
+      <form id="deskNoteForm">
+        <label>Note title<input id="deskNoteTitle" maxlength="160" required placeholder="A thought worth keeping"></label>
+        <label>Note body<textarea id="deskNoteBody" rows="10" placeholder="Write your thoughts, research, and inspiration here…"></textarea></label>
+        <div class="actions"><button type="submit">Save note</button><button id="deleteDeskNote" type="button" class="danger">Delete note</button></div>
+        <p id="deskNoteStatus" class="hint" aria-live="polite"></p>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="deskHelpDialog" aria-labelledby="deskHelpHeading">
+    <div class="dialogHead"><div><small>THE WITCH'S DESK</small><h2 id="deskHelpHeading">Writing Guide &amp; Shortcuts</h2></div><button type="button" data-close="deskHelpDialog" aria-label="Close help">✕</button></div>
+    <div class="dialogPad">
+      <p>Your scenes save automatically as you type. Use the manuscript tree to switch chapters or scenes, and the top navigation to open your story archive, notes, search, and backups.</p>
+      <div class="helpShortcuts">
+        <p><strong>Ctrl / Cmd + S</strong> Save changes</p>
+        <p><strong>Ctrl / Cmd + F</strong> Find and replace</p>
+        <p><strong>Ctrl / Cmd + B / I / U</strong> Bold, italic, underline</p>
+        <p><strong>Esc</strong> Close a menu or dialogue</p>
+      </div>
+      <p>Use <strong>File → Export &amp; backup</strong> to save an independent copy of a manuscript. The <strong>Story Grimoire</strong> organizes characters, locations, items, plots, and lore.</p>
+    </div>
+  </dialog>
 
   <dialog id="grimoireDialog" aria-labelledby="grimoireTitle">
     <div class="grimoireHead">
