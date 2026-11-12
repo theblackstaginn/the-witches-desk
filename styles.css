@@ -153,3 +153,42 @@ dialog::backdrop{background:#08050cdd;backdrop-filter:blur(5px)}
 .tabTitleInput{flex:1;min-width:0;border:0!important;background:transparent!important;color:inherit!important;padding:0!important;font:inherit;font-weight:600;outline:none!important}
 .tabTitleInput::placeholder{color:currentColor;opacity:.65}
 .hiddenCounter{display:none}
+
+
+/* Witch's Desk production artwork: real uploaded assets, no generated mockups. */
+body{
+  background:
+    linear-gradient(90deg,rgba(8,4,13,.56),rgba(10,5,17,.24) 50%,rgba(8,4,13,.56)),
+    url("./assets/backgrounds/witches-desk-study-bg.png") center center / cover fixed no-repeat,
+    #0b0710;
+}
+body::before,body::after{display:none}
+.topbar{
+  background:
+    linear-gradient(180deg,rgba(9,4,15,.93),rgba(29,11,37,.93)),
+    url("./assets/textures/plum-embossed.png") center / 480px repeat;
+}
+.brand strong{
+  background:url("./assets/branding/witches-desk-wordmark.png") left center / contain no-repeat;
+  font-size:0;
+  width:clamp(180px,23vw,360px);
+  height:58px;
+  display:block;
+}
+.leftRail,.rightRail{
+  background:
+    linear-gradient(rgba(16,7,23,.90),rgba(16,7,23,.93)),
+    url("./assets/textures/leather.png") center / 420px repeat;
+}
+.paperStage{
+  background:linear-gradient(rgba(17,8,25,.55),rgba(17,8,25,.55));
+}
+#editor{
+  background:
+    url("./assets/parchment/parchment-editor.png") center top / 100% 100% no-repeat,
+    #efcf9b;
+}
+@media(max-width:760px){
+  .brand strong{width:190px;height:48px}
+  body{background-attachment:scroll}
+}
