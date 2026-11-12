@@ -385,15 +385,17 @@ body:before,body:after{display:none}
   box-shadow:0 14px 45px rgba(0,0,0,.52);
 }
 /* Genuine Lace & Leather Arcane Parchment Light Vol. 1.
-   Keep its original texture proportions and let the manuscript scroll above it. */
+   Rotate only the paper image into landscape; text stays upright and scrollable. */
 .parchmentFrame::before{
   content:"";
   position:absolute;
   z-index:0;
-  inset:0;
-  width:100%;
-  height:100%;
-  transform:none;
+  top:50%;
+  left:50%;
+  width:100cqh;
+  height:100cqw;
+  transform:translate(-50%,-50%) rotate(90deg);
+  transform-origin:center;
   background-image:url("./assets/Parchment_Light_Vol_1_01.jpg");
   background-position:center center;
   background-repeat:no-repeat;
