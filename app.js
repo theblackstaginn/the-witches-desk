@@ -460,4 +460,107 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
+
+// Workspace navigation wiring - 2026-11-12
+function activateModule(button){
+  document.querySelectorAll('.module').forEach(node=>node.classList.toggle('active',node===button));
+}
+function openStoryCategory(category){
+  if(!book){toast('Choose or create a manuscript first');return}
+  grimoireCategory=category;grimoireSelected=null;grimoireOpen();
+}
+function openNotesPanel(){
+  const panel=$('notes').closest('.inspectorCard');
+  if(panel&&getComputedStyle(panel).display!=='none'){
+    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+    $('addNote').focus();
+  }else{
+    $('addNote').click();
+  }
+}
+document.querySelectorAll('.module').forEach(button=>{
+  const name=button.textContent.trim().toLowerCase();
+  button.addEventListener('click',async()=>{
+    try{
+      if(name!=='write'&&dirty)await saveNow();
+      if(name==='write'){
+        activateModule(button);
+        $('editor').focus();
+      }else if(name==='projects'){
+        activateModule(button);
+        $('books').focus();
+        $('books').closest('.projectPicker')?.scrollIntoView({block:'nearest'});
+      }else if(name==='world'||name==='lore'){
+        activateModule(button);openStoryCategory('lore');
+      }else if(name==='characters'){
+        activateModule(button);openStoryCategory('characters');
+      }else if(name==='locations'){
+        activateModule(button);openStoryCategory('settings');
+      }else if(name==='items'){
+        activateModule(button);openStoryCategory('items');
+      }else if(name==='plots'){
+        activateModule(button);openStoryCategory('plotlines');
+      }else if(name==='notes'){
+        activateModule(button);openNotesPanel();
+      }else if(name==='research'){
+        $('searchOpen').click();
+      }else if(name==='vault'){
+        activateModule(button);$('exportDialog').showModal();
+      }
+    }catch(e){handleError(e)}
+  });
+});
+const railCategories={
+  'Development':'plotlines',
+  'Scenes':'scenes',
+  'Characters':'characters',
+  'Locations':'settings',
+  'Items & Artifacts':'items',
+  'Factions':'lore',
+  'Magic System':'lore',
+  'Creatures & Races':'lore',
+  'Timeline':'plotlines',
+  'Plot Outline':'plotlines',
+  'Research':'research',
+  'Templates':'lore'
+};
+document.querySelectorAll('.railLink').forEach(button=>{
+  if(button.id==='openCharactersRail')return;
+  button.addEventListener('click',async()=>{
+    try{
+      const label=button.textContent.trim().replace(/^[^A-Za-z]+/,'').trim();
+      const category=railCategories[label];
+      if(category==='research'){$('searchOpen').click();return}
+      if(category==='scenes'){$('scenes').scrollIntoView({behavior:'smooth',block:'nearest'});return}
+      if(dirty)await saveNow();
+      if(category)openStoryCategory(category);
+    }catch(e){handleError(e)}
+  });
+});
+$('openCharacters').onclick=()=>openStoryCategory('characters');
+$('openCharactersRail').onclick=()=>openStoryCategory('characters');
+const focusButton=document.querySelector('.focusMode');
+focusButton?.addEventListener('click',()=>{
+  const active=$('workspace').classList.toggle('writingFocus');
+  focusButton.setAttribute('aria-pressed',String(active));
+  focusButton.textContent=active?'☾ Exit Focus':'☾ Focus Mode';
+  $('editor').focus();
+});
+document.querySelector('.fullscreenButton')?.addEventListener('click',async()=>{
+  try{
+    if(document.fullscreenElement)await document.exitFullscreen();
+    else await $('workspace').requestFullscreen();
+  }catch(e){handleError(e)}
+});
+document.querySelector('.newTab')?.addEventListener('click',()=>{$('addScene').click()});
+document.querySelector('.docTab.active b')?.addEventListener('click',()=>{$('editor').focus()});
+document.querySelectorAll('.docTab:not(.active)').forEach((button,i)=>{
+  button.tabIndex=0;button.setAttribute('role','button');
+  const category=i===0?'characters':'settings';
+  const open=()=>openStoryCategory(category);
+  button.addEventListener('click',open);
+  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+});
+$('exportMenu').onclick=()=>$('exportDialog').showModal();
+
 init();
