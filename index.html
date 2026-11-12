@@ -8,12 +8,30 @@
 </head>
 <body>
 <div id="app">
-  <header>
-    <strong>☾ The Witch’s Desk <small>✦ Midnight Lavender</small></strong>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brandMoon">☾</span>
+      <span class="brandRaven">♠</span>
+      <strong>The Witch’s Desk</strong>
+    </div>
+    <nav class="moduleNav" aria-label="Workspace sections">
+      <button class="module active" type="button"><span>✒</span>Write</button>
+      <button class="module" type="button"><span>⚒</span>Projects</button>
+      <button class="module" type="button"><span>⌘</span>World</button>
+      <button class="module" type="button" id="openCharacters"><span>♟</span>Characters</button>
+      <button class="module" type="button"><span>⌾</span>Locations</button>
+      <button class="module" type="button"><span>❈</span>Items</button>
+      <button class="module" type="button"><span>⌁</span>Plots</button>
+      <button class="module" type="button"><span>▤</span>Lore</button>
+      <button class="module" type="button"><span>▥</span>Notes</button>
+      <button class="module" type="button" id="searchOpen" hidden><span>⤢</span>Research</button>
+      <button class="module" type="button"><span>▰</span>Vault</button>
+    </nav>
     <div class="headerActions">
-      <button id="searchOpen" hidden>⌕ Search</button>
-      <span id="status">Ready</span>
-      <button id="signout" hidden>Sign out</button>
+      <span id="status" class="syncPill">Ready</span>
+      <button class="iconButton" title="Notifications">♧</button>
+      <button class="iconButton" title="Settings">⚙</button>
+      <button id="signout" class="iconButton signout" hidden title="Sign out">↪</button>
     </div>
   </header>
 
@@ -27,8 +45,10 @@
     </form>
   </section>
 
-  <section id="auth" class="panel" hidden>
-    <h1>Enter the writing room</h1>
+  <section id="auth" class="panel authPanel" hidden>
+    <div class="authCrest">☾ ✦ ☽</div>
+    <h1>Enter The Witch’s Desk</h1>
+    <p>Your private writing room awaits.</p>
     <form id="authForm">
       <label>Email<input id="email" type="email" required></label>
       <label>Password<input id="password" type="password" minlength="6" required></label>
@@ -42,80 +62,159 @@
 
   <main id="workspace" hidden>
     <aside class="leftRail">
-      <div class="heading"><h2>Manuscripts</h2><button id="addBook" title="New manuscript">+</button></div>
-      <select id="books" aria-label="Choose manuscript"></select>
-      <div class="miniActions">
-        <button id="renameBook">Rename</button><button id="deleteBook" class="danger">Delete</button>
+      <div class="projectPicker">
+        <span class="stagSigil">♜</span>
+        <select id="books" aria-label="Choose manuscript"></select>
+        <button class="tinyGlyph" id="addBook" title="New manuscript">＋</button>
       </div>
 
-      <div class="heading"><h2>Chapters</h2><button id="addChapter" title="New chapter">+</button></div>
-      <nav id="chapters"></nav>
-      <div class="miniActions">
-        <button id="chapterUp">↑</button><button id="chapterDown">↓</button><button id="renameChapter">Rename</button><button id="deleteChapter" class="danger">Delete</button>
-      </div>
+      <section class="railSection manuscriptTree">
+        <div class="sectionTitle"><span>▣</span><h2>Manuscript</h2><span class="chev">⌄</span></div>
+        <nav id="chapters"></nav>
+        <div class="sceneTree">
+          <div class="sceneLabel"><span>▤</span> Scenes</div>
+          <nav id="scenes"></nav>
+        </div>
+        <div class="miniActions compactControls">
+          <button id="addChapter">＋ Chapter</button>
+          <button id="addScene">＋ Scene</button>
+          <button id="chapterUp" title="Move chapter up">↑</button>
+          <button id="chapterDown" title="Move chapter down">↓</button>
+          <button id="sceneUp" title="Move scene up">↑</button>
+          <button id="sceneDown" title="Move scene down">↓</button>
+        </div>
+      </section>
 
-      <div class="heading"><h2>Scenes</h2><button id="addScene" title="New scene">+</button></div>
-      <nav id="scenes"></nav>
-      <div class="miniActions">
-        <button id="sceneUp">↑</button><button id="sceneDown">↓</button><button id="deleteScene" class="danger">Delete</button>
-      </div>
+      <section class="railSection worldTree">
+        <div class="sectionTitle"><span>◉</span><h2>Worldbuilding</h2><span class="chev">⌄</span></div>
+        <button class="railLink">❧ Development</button>
+        <button class="railLink">▥ Scenes</button>
+        <button class="railLink" id="openCharactersRail">♟ Characters</button>
+        <button class="railLink">⌾ Locations</button>
+        <button class="railLink">◇ Items & Artifacts</button>
+        <button class="railLink">♜ Factions</button>
+        <button class="railLink">♏ Magic System</button>
+        <button class="railLink">♣ Creatures & Races</button>
+        <button class="railLink">▣ Timeline</button>
+        <button class="railLink">⌘ Plot Outline</button>
+        <button class="railLink">▥ Research</button>
+        <button class="railLink">▤ Templates</button>
+      </section>
 
-      <div class="bookStats">
-        <span id="bookWordCount">0 manuscript words</span>
-        <span id="sceneCount">0 scenes</span>
+      <div class="leftUtility">
+        <div class="miniActions">
+          <button id="renameBook">Rename Book</button>
+          <button id="renameChapter">Rename Chapter</button>
+          <button id="deleteScene" class="danger">Delete Scene</button>
+          <button id="deleteChapter" class="danger">Delete Chapter</button>
+          <button id="deleteBook" class="danger">Delete Book</button>
+        </div>
+        <div class="bookStats">
+          <span id="bookWordCount">0 manuscript words</span>
+          <span id="sceneCount">0 scenes</span>
+        </div>
       </div>
     </aside>
 
     <section class="editorShell">
+      <div class="documentTabs">
+        <div class="docTab active"><span>▤</span><span id="activeTabTitle">Current Scene</span><b>×</b></div>
+        <div class="docTab"><span>♟</span>Caelum (Character)<b>×</b></div>
+        <div class="docTab"><span>⌾</span>The Hollow Wood (Location)<b>×</b></div>
+        <button class="newTab" type="button">＋</button>
+      </div>
+
+      <div class="editorMenus">
+        <div class="menuWords"><span>File⌄</span><span>Edit⌄</span><span>View⌄</span><span>Insert⌄</span><span>Format⌄</span><span>Tools⌄</span><span>Help⌄</span></div>
+        <button class="focusMode" type="button">☾ Focus Mode</button>
+        <button class="fullscreenButton" type="button" title="Fullscreen">⛶</button>
+      </div>
+
       <div class="documentBar">
         <input id="sceneTitle" aria-label="Scene title" placeholder="Scene title">
         <span id="wordCount">0 words</span>
       </div>
 
       <div class="toolbar" role="toolbar" aria-label="Formatting">
-        <button data-cmd="undo" title="Undo">↶</button>
-        <button data-cmd="redo" title="Redo">↷</button>
-        <span class="toolbarSep"></span>
+        <select class="formatSelect" aria-label="Paragraph style">
+          <option>Paragraph</option>
+        </select>
+        <select class="fontSelect" aria-label="Font">
+          <option>Garamond</option>
+          <option>Georgia</option>
+          <option>Times New Roman</option>
+        </select>
+        <select class="sizeSelect" aria-label="Font size">
+          <option>12</option><option>14</option><option>16</option><option>18</option>
+        </select>
         <button data-cmd="bold" title="Bold"><b>B</b></button>
         <button data-cmd="italic" title="Italic"><i>I</i></button>
         <button data-cmd="underline" title="Underline"><u>U</u></button>
         <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+        <button class="goldTool" title="Text color">A⌄</button>
         <span class="toolbarSep"></span>
-        <button data-block="p">Body</button>
-        <button data-block="h1">Title</button>
-        <button data-block="h2">Heading</button>
-        <button data-block="blockquote">Quote</button>
+        <button data-cmd="justifyLeft" title="Align left">☰</button>
+        <button data-cmd="insertUnorderedList" title="Bulleted list">☷</button>
+        <button data-cmd="insertOrderedList" title="Numbered list">☶</button>
+        <button data-cmd="justifyCenter" title="Center">≡</button>
+        <button data-cmd="justifyRight" title="Align right">☰</button>
         <span class="toolbarSep"></span>
-        <button data-cmd="insertUnorderedList">• List</button>
-        <button data-cmd="insertOrderedList">1. List</button>
-        <button data-cmd="justifyLeft">⇤</button>
-        <button data-cmd="justifyCenter">↔</button>
-        <button data-cmd="justifyRight">⇥</button>
-        <span class="toolbarSep"></span>
-        <button id="findReplace">Find / Replace</button>
-        <button id="snapshot">Save revision</button>
-        <button id="revisions">Revisions</button>
-        <button id="exportMenu">Export ▾</button>
+        <button id="findReplace" title="Find and replace">⌕</button>
+        <button id="snapshot" title="Save revision">◈</button>
+        <button id="revisions" title="Revisions">▦</button>
+        <button id="exportMenu" title="Export">•••</button>
+        <button data-cmd="undo" title="Undo" class="hiddenTool">↶</button>
+        <button data-cmd="redo" title="Redo" class="hiddenTool">↷</button>
+        <button data-block="p" class="hiddenTool">Body</button>
+        <button data-block="h1" class="hiddenTool">Title</button>
+        <button data-block="h2" class="hiddenTool">Heading</button>
+        <button data-block="blockquote" class="hiddenTool">Quote</button>
       </div>
 
-      <article id="editor" contenteditable="true" spellcheck="true" aria-label="Manuscript editor" data-placeholder="The story begins…"></article>
+      <div class="paperStage">
+        <article id="editor" contenteditable="true" spellcheck="true" aria-label="Manuscript editor" data-placeholder="The story begins…"></article>
+      </div>
+
+      <footer class="statusBar">
+        <span>▥ <strong id="chapterWords">Words (Chapter):</strong>&nbsp; <span id="chapterWordMirror">—</span></span>
+        <span>☷ Chapter: <span id="chapterNumber">—</span></span>
+        <span>▰ Project: <span id="projectWordMirror">—</span></span>
+        <span class="savedState">✓ <span id="savedMirror">Saved</span></span>
+      </footer>
     </section>
 
-    <aside class="right">
-      <h2>Scene details</h2>
-      <label>Point of view<select id="pov"><option value="">Unassigned</option></select></label>
-      <label>POV structure<select id="povMode"><option value="single">Single POV</option><option value="dual">Dual POV</option></select></label>
+    <aside class="rightRail">
+      <section class="inspectorCard">
+        <div class="cardTitle"><span>▥</span><h2>At a Glance</h2><span>⌄</span></div>
+        <div class="glanceBody">
+          <p><b>▥ Book</b><span id="glanceBook">Current manuscript</span></p>
+          <p><b>♟ POV:</b><select id="pov"><option value="">Unassigned</option></select></p>
+          <p><b>▱ Status:</b><span>Draft</span></p>
+          <p><b>◎ Word Goal:</b><span>90,000</span></p>
+          <div class="goalBar"><i></i></div>
+          <div class="goalText"><span id="goalCount">0 / 90,000</span><span id="goalPercent">0%</span></div>
+          <label class="povModeLabel">POV structure<select id="povMode"><option value="single">Single POV</option><option value="dual">Dual POV</option></select></label>
+        </div>
+      </section>
 
-      <div class="heading"><h2>Characters</h2><button id="addCharacter">+</button></div>
-      <div id="characters"></div>
+      <section class="inspectorCard">
+        <div class="cardTitle"><span>▰</span><h2>Current Scene</h2><span>⌄</span></div>
+        <div class="sceneSummary">
+          <p class="sceneName">▤ <span id="sceneSummaryTitle">Untitled Scene</span></p>
+          <p id="sceneSummaryText">Use the scene notes and worldbuilding tools to keep the story moving.</p>
+        </div>
+      </section>
 
-      <div class="heading"><h2>Story Grimoire</h2><button id="openGrimoire" type="button" title="Open story encyclopedia">✧</button></div>
-      <p class="hint">Characters · Settings · Items · Plotlines · Lore</p>
+      <section class="inspectorCard">
+        <div class="cardTitle"><span>✒</span><h2>Notes</h2><button id="addNote" class="cardAdd">＋</button></div>
+        <div id="notes" class="noteList"></div>
+      </section>
 
-      <div class="heading"><h2>Notes</h2><button id="addNote">+</button></div>
-      <div id="notes"></div>
-
-      <p class="hint">Changes save automatically after a short pause. Save a revision before major edits.</p>
+      <section class="inspectorCard compactCharacterCard">
+        <div class="cardTitle"><span>♟</span><h2>Characters</h2><button id="addCharacter" class="cardAdd">＋</button></div>
+        <div id="characters"></div>
+        <button id="openGrimoire" class="grimoireButton" type="button">✧ Open Story Grimoire</button>
+      </section>
     </aside>
   </main>
 
