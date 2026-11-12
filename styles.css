@@ -332,3 +332,31 @@ body:before,body:after{display:none}
   .rightRail{display:block;padding:12px}
   .module{flex-basis:70px}
 }
+
+
+/* Scenic study backdrop and focus mode - 2026-11-12 */
+@media(min-width:1081px){
+  #workspace{
+    width:calc(100% - clamp(28px,5vw,92px));
+    max-width:1780px;
+    height:calc(100dvh - 76px - 24px);
+    margin:12px auto;
+    border:1px solid rgba(216,162,75,.57);
+    border-radius:12px;
+    box-shadow:0 18px 55px rgba(0,0,0,.67),0 0 0 1px rgba(10,4,18,.7);
+    background:rgba(11,5,18,.28);
+  }
+  .leftRail,.rightRail{background:linear-gradient(rgba(16,7,24,.76),rgba(15,7,23,.83)),url("./assets/textures/leather.png") center / 420px repeat}
+  .editorShell{background:linear-gradient(rgba(12,6,18,.52),rgba(12,6,18,.60)),url("./assets/textures/purple-gold-marble.png") center / cover}
+  .rightRail{border-radius:0 12px 12px 0}
+  .leftRail{border-radius:12px 0 0 12px}
+}
+#workspace.writingFocus{grid-template-columns:0 minmax(0,1fr) 0}
+#workspace.writingFocus .leftRail,#workspace.writingFocus .rightRail{visibility:hidden;overflow:hidden;padding:0;border:0}
+#workspace.writingFocus .editorShell{grid-column:2}
+#workspace.writingFocus .paperStage{padding:16px 18px 24px}
+#workspace.writingFocus #editor{max-width:900px}
+@media(max-width:760px){
+  #workspace.writingFocus{display:block}
+  #workspace.writingFocus .editorShell{width:100%}
+}
