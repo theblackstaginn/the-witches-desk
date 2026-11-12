@@ -1062,3 +1062,184 @@ body:before,body:after{display:none}
     min-height:45px;
   }
 }
+
+
+/* Installed iPhone app: safe-area dialogs and compact grimoire - 2026-11-12 */
+.grimoireEditNav{display:none}
+@media (max-width:760px){
+  /* Standalone Home Screen app only. Safari's existing layout is left alone. */
+  .installedWebApp dialog[open]{
+    position:fixed;
+    inset:calc(env(safe-area-inset-top,0px) + 12px) 8px calc(env(safe-area-inset-bottom,0px) + 12px);
+    display:flex;
+    flex-direction:column;
+    width:calc(100% - 16px);
+    max-width:580px;
+    min-width:0;
+    height:auto;
+    max-height:none;
+    margin:0 auto;
+    padding:0;
+    overflow:hidden;
+    border-radius:14px;
+    background:rgba(28,11,40,.98);
+    box-shadow:0 18px 70px rgba(0,0,0,.77);
+    overscroll-behavior:contain;
+  }
+  .installedWebApp dialog[open] .dialogHead,
+  .installedWebApp dialog[open] .grimoireHead{
+    flex:0 0 auto;
+    min-height:64px;
+    padding:13px 14px 10px;
+    align-items:center;
+    gap:10px;
+  }
+  .installedWebApp dialog[open] .dialogHead > div,
+  .installedWebApp dialog[open] .grimoireHead > div{
+    min-width:0;
+  }
+  .installedWebApp dialog[open] .dialogHead h2,
+  .installedWebApp dialog[open] .grimoireHead h2{
+    font-size:clamp(18px,5.2vw,22px);
+    line-height:1.15;
+    margin:4px 0;
+  }
+  .installedWebApp dialog[open] .grimoireHead p{font-size:12px;margin:4px 0 0}
+  .installedWebApp dialog[open] .dialogHead > button,
+  .installedWebApp dialog[open] .grimoireHead > button{
+    flex:0 0 42px;
+    width:42px;
+    height:42px;
+    padding:0;
+    border:1px solid rgba(222,171,231,.53);
+    border-radius:10px;
+    background:rgba(90,36,115,.50);
+    font-size:19px;
+    color:#fff2e6;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  .installedWebApp dialog[open] .dialogPad,
+  .installedWebApp dialog[open] .grimoireBody{
+    flex:1 1 auto;
+    min-height:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    padding:14px 14px max(18px,env(safe-area-inset-bottom,0px));
+  }
+  .installedWebApp #grimoireDialog .grimoireTabs{
+    flex:0 0 auto;
+    display:flex;
+    flex-wrap:nowrap;
+    gap:7px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:10px 12px;
+    scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;
+  }
+  .installedWebApp #grimoireDialog .grimoireTabs button{
+    flex:0 0 auto;
+    padding:9px 12px;
+    min-height:39px;
+    border-radius:9px;
+    font-size:14px;
+    white-space:nowrap;
+    touch-action:manipulation;
+  }
+  .installedWebApp #grimoireDialog .grimoireBody{
+    display:block;
+  }
+  .installedWebApp #grimoireDialog .grimoireList{
+    display:block;
+    width:100%;
+    border:0;
+    padding:0;
+    margin:0;
+  }
+  .installedWebApp #grimoireDialog .grimoireList > button{
+    min-height:44px;
+    margin-bottom:12px;
+  }
+  .installedWebApp #grimoireDialog #grimoireFilter{
+    width:100%;
+    min-height:44px;
+    box-sizing:border-box;
+    margin-bottom:16px;
+  }
+  .installedWebApp #grimoireDialog #grimoireEntries{
+    display:grid;
+    gap:8px;
+  }
+  .installedWebApp #grimoireDialog #grimoireEntries button{
+    width:100%;
+    min-height:45px;
+    text-align:left;
+    margin:0;
+  }
+  .installedWebApp #grimoireDialog #grimoireForm{
+    display:none;
+  }
+  .installedWebApp #grimoireDialog.mobileEditing .grimoireList,
+  .installedWebApp #grimoireDialog.mobileEditing .grimoireTabs{
+    display:none;
+  }
+  .installedWebApp #grimoireDialog.mobileEditing #grimoireForm{
+    display:block;
+    margin:0;
+    padding:0;
+    width:100%;
+  }
+  .installedWebApp #grimoireDialog.mobileEditing .grimoireEditNav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+    min-height:42px;
+    border-bottom:1px solid rgba(200,149,211,.30);
+    padding-bottom:10px;
+  }
+  .installedWebApp #backToGrimoireList{
+    flex:0 0 auto;
+    min-height:37px;
+    padding:7px 12px;
+    border:1px solid rgba(231,179,111,.56);
+    border-radius:9px;
+    background:rgba(89,36,115,.60);
+    color:#fff0e0;
+  }
+  .installedWebApp #grimoireEditLabel{
+    flex:1;
+    min-width:0;
+    font-size:13px;
+    text-align:right;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+    color:#e9c7a7;
+  }
+  .installedWebApp #grimoireForm label{
+    display:block;
+    margin:0 0 13px;
+    font-size:14px;
+  }
+  .installedWebApp #grimoireForm input,
+  .installedWebApp #grimoireForm textarea{
+    width:100%;
+    box-sizing:border-box;
+    margin-top:6px;
+    padding:12px;
+    font-size:16px;
+    line-height:1.45;
+  }
+  .installedWebApp #grimoireForm #entrySummary{min-height:96px}
+  .installedWebApp #grimoireForm #entryDetails{min-height:180px}
+  .installedWebApp #grimoireForm .actions{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    padding-bottom:10px;
+  }
+}
