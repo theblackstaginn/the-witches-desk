@@ -231,6 +231,14 @@
 
   <div id="deskMenu" class="deskMenu" role="menu" aria-label="Editor commands" hidden></div>
 
+  <dialog id="worldOverviewDialog" aria-labelledby="worldOverviewHeading">
+    <div class="dialogHead"><div><small>THE STORY UNIVERSE</small><h2 id="worldOverviewHeading">Worldbuilding Atlas</h2></div><button type="button" data-close="worldOverviewDialog" aria-label="Close world overview">✕</button></div>
+    <div class="dialogPad">
+      <p class="hint">Every place, person, object, and thread of the world lives here. Choose a category to explore or add an entry.</p>
+      <div id="worldOverviewGrid" class="worldOverviewGrid"></div>
+    </div>
+  </dialog>
+
   <dialog id="projectsDialog" aria-labelledby="projectsHeading">
     <div class="dialogHead"><div><small>THE BOOKSHELF</small><h2 id="projectsHeading">Manuscript Projects</h2></div><button type="button" data-close="projectsDialog" aria-label="Close projects">✕</button></div>
     <div class="dialogPad">
