@@ -553,14 +553,7 @@ document.querySelector('.fullscreenButton')?.addEventListener('click',async()=>{
   }catch(e){handleError(e)}
 });
 document.querySelector('.newTab')?.addEventListener('click',()=>{$('addScene').click()});
-document.querySelector('.docTab.active b')?.addEventListener('click',()=>{$('editor').focus()});
-document.querySelectorAll('.docTab:not(.active)').forEach((button,i)=>{
-  button.tabIndex=0;button.setAttribute('role','button');
-  const category=i===0?'characters':'settings';
-  const open=()=>openStoryCategory(category);
-  button.addEventListener('click',open);
-  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
-});
+// The document strip contains one real editable scene tab; no placeholder-tab handlers.
 $('exportMenu').onclick=()=>$('exportDialog').showModal();
 
 init();
