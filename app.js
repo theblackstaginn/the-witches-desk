@@ -227,6 +227,20 @@ function openScene(){
 function count(){
   const wc=countWords($('editor').innerText);
   $('wordCount').textContent=wc+' words';
+  // The manuscript goal includes saved scenes plus the current unsaved edit.
+  const savedTotal=scenes.reduce((total,item)=>total+(Number(item.word_count)||0),0);
+  const currentSaved=scene?(Number(scene.word_count)||0):0;
+  renderWordGoal(savedTotal-currentSaved+(scene?wc:0));
+}
+function renderWordGoal(total){
+  const goal=90000;
+  const safeTotal=Math.max(0,total);
+  const percent=Math.min(100,(safeTotal/goal)*100);
+  const countLabel=$('goalCount'),percentLabel=$('goalPercent');
+  if(countLabel)countLabel.textContent=safeTotal.toLocaleString()+' / '+goal.toLocaleString();
+  if(percentLabel)percentLabel.textContent=Math.round(percent)+'%';
+  const fill=document.querySelector('.goalBar i');
+  if(fill)fill.style.width=percent+'%';
 }
 function changed(){
   if(loading||!scene)return;
@@ -335,7 +349,10 @@ async function updateBookStats(){
   if(!book){$('bookWordCount').textContent='0 manuscript words';$('sceneCount').textContent='0 scenes';return}
   try{
     const rows=await query(db('scenes').select('word_count').eq('book_id',book.id));
-    $('bookWordCount').textContent=rows.reduce((a,s)=>a+(s.word_count||0),0).toLocaleString()+' manuscript words';
+    const savedTotal=rows.reduce((a,s)=>a+(Number(s.word_count)||0),0);
+    $('bookWordCount').textContent=savedTotal.toLocaleString()+' manuscript words';
+    const currentSaved=scene?(Number(scene.word_count)||0):0;
+    renderWordGoal(savedTotal-currentSaved+(scene?countWords($('editor').innerText):0));
     $('sceneCount').textContent=rows.length+' scene'+(rows.length===1?'':'s');
   }catch{}
 }
