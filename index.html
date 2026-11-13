@@ -363,6 +363,62 @@
 
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
+
+<style>
+  #farmerWelcome {
+    position: fixed; inset: 0; z-index: 2147483000;
+    display: grid; place-items: center; padding: 20px;
+    background: rgba(9, 4, 17, .84);
+    backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+    opacity: 0; transition: opacity .45s ease;
+  }
+  #farmerWelcome.is-visible { opacity: 1; }
+  #farmerWelcome[hidden] { display: none !important; }
+  .farmerWelcomeCard { width: min(96vw, 980px); max-height: 88dvh; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .farmerWelcomeCard img { display: block; width: 100%; max-height: calc(88dvh - 58px); object-fit: contain; filter: drop-shadow(0 10px 30px rgba(0,0,0,.65)); }
+  #farmerWelcomeDismiss {
+    border: 1px solid #c9a56e; border-radius: 999px; padding: 10px 30px;
+    background: #2d173e; color: #f7e5c7; font: 17px Georgia, serif;
+    cursor: pointer; box-shadow: 0 3px 18px #0008;
+  }
+  #farmerWelcomeDismiss:focus-visible { outline: 3px solid #e6c3ff; outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { #farmerWelcome { transition: none; } }
+</style>
+<div id="farmerWelcome" role="dialog" aria-modal="true" aria-label="A message from Farmer" hidden>
+  <div class="farmerWelcomeCard">
+    <img src="./assets/same_ornate_fantasy_purple_card_but_without_the_x.png" alt="You deserve this. The only person standing in your way is you. Just reach out and take the life you want. I love you. — Farmer">
+    <button id="farmerWelcomeDismiss" type="button">Begin writing ✦</button>
+  </div>
+</div>
+<script>
+(() => {
+  const overlay = document.getElementById('farmerWelcome');
+  const dismiss = document.getElementById('farmerWelcomeDismiss');
+  const workspace = document.getElementById('workspace');
+  let shown = false;
+  let previousFocus = null;
+  const close = () => {
+    overlay.classList.remove('is-visible');
+    overlay.hidden = true;
+    if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+  };
+  const maybeShow = () => {
+    if (shown || workspace.hidden || getComputedStyle(workspace).display === 'none') return;
+    shown = true;
+    previousFocus = document.activeElement;
+    overlay.hidden = false;
+    requestAnimationFrame(() => overlay.classList.add('is-visible'));
+    dismiss.focus();
+  };
+  dismiss.addEventListener('click', close);
+  overlay.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); close(); }
+    if (event.key === 'Tab') { event.preventDefault(); dismiss.focus(); }
+  });
+  new MutationObserver(maybeShow).observe(workspace, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
+  maybeShow();
+})();
+</script>
 <script type="module" src="./app.js?v=wd-modal-20261112"></script>
 </body>
 </html>
