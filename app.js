@@ -14,6 +14,75 @@ let client,user,book,chapter,scene;
 let books=[],chapters=[],scenes=[],characters=[],notes=[],worldEntries=[];
 let timer,loading=false,dirty=false;
 
+
+const positionKey=()=>user?'witches-desk-position-v1-'+user.id:null;
+function readPosition(){
+  try{return JSON.parse(localStorage.getItem(positionKey())||'null')}catch{return null}
+}
+function writingScroller(){
+  let el=$('editor');
+  while(el&&el!==document.body){
+    if(el.scrollHeight>el.clientHeight+2&&/(auto|scroll)/.test(getComputedStyle(el).overflowY))return el;
+    el=el.parentElement;
+  }
+  return document.scrollingElement;
+}
+function textOffset(root,node,offset){
+  const range=document.createRange();range.selectNodeContents(root);
+  try{range.setEnd(node,offset);return range.toString().length}catch{return 0}
+}
+function nodeAtOffset(root,offset){
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let node,last=null,remaining=Math.max(0,offset);
+  while((node=walker.nextNode())){
+    last=node;
+    if(remaining<=node.length)return {node,offset:remaining};
+    remaining-=node.length;
+  }
+  return last?{node:last,offset:last.length}:{node:root,offset:root.childNodes.length};
+}
+let positionTimer;
+function rememberPosition(){
+  if(!user||!book||!chapter||!scene||loading)return;
+  const old=readPosition();
+  const selection=window.getSelection();
+  const inside=selection&&selection.rangeCount&&$('editor').contains(selection.anchorNode)&&$('editor').contains(selection.focusNode);
+  const scroll=writingScroller();
+  const next={bookId:book.id,chapterId:chapter.id,sceneId:scene.id,
+    start:inside?textOffset($('editor'),selection.anchorNode,selection.anchorOffset):(old?.sceneId===scene.id?old.start:0),
+    end:inside?textOffset($('editor'),selection.focusNode,selection.focusOffset):(old?.sceneId===scene.id?old.end:0),
+    scrollTop:scroll?.scrollTop||0,updated:Date.now()};
+  try{localStorage.setItem(positionKey(),JSON.stringify(next))}catch{}
+}
+function restorePosition(){
+  const saved=readPosition();
+  if(!saved||saved.sceneId!==scene?.id)return;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(scene?.id!==saved.sceneId)return;
+    const scroll=writingScroller();
+    if(scroll)scroll.scrollTop=saved.scrollTop||0;
+    if(Number.isFinite(saved.start)&&Number.isFinite(saved.end)){
+      try{
+        const a=nodeAtOffset($('editor'),saved.start),b=nodeAtOffset($('editor'),saved.end);
+        const range=document.createRange();range.setStart(a.node,a.offset);range.setEnd(b.node,b.offset);
+        const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+      }catch{}
+    }
+    if(scroll)scroll.scrollTop=saved.scrollTop||0;
+  }));
+}
+document.addEventListener('selectionchange',()=>{
+  if(scene&&$('editor').contains(document.getSelection()?.anchorNode)){
+    clearTimeout(positionTimer);positionTimer=setTimeout(rememberPosition,120);
+  }
+});
+$('editor').addEventListener('keyup',rememberPosition);
+$('editor').addEventListener('mouseup',rememberPosition);
+$('editor').addEventListener('touchend',()=>setTimeout(rememberPosition,100));
+document.addEventListener('scroll',()=>{if(scene)rememberPosition()},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)rememberPosition()});
+window.addEventListener('pagehide',rememberPosition);
+
 function show(id){
   for(const x of ['setup','auth','workspace']) $(x).hidden=x!==id;
   $('searchOpen').hidden=id!=='workspace';
@@ -79,7 +148,7 @@ async function loadBooks(){
   books=await query(db('books').select('*').order('created_at'));
   $('books').replaceChildren();
   for(const b of books)$('books').add(new Option(b.title,b.id));
-  book=books.find(b=>b.id===book?.id)||books[0]||null;
+  book=books.find(b=>b.id===book?.id)||books.find(b=>b.id===readPosition()?.bookId)||books[0]||null;
   if(book){$('books').value=book.id;await loadBook()}
   else{
     chapter=null;scene=null;clearEditor();
@@ -131,7 +200,7 @@ async function loadBook(){
   }
 
   renderCharacters();renderNotes();renderChapters();
-  chapter=chapters.find(c=>c.id===chapter?.id)||chapters[0]||null;
+  chapter=chapters.find(c=>c.id===chapter?.id)||chapters.find(c=>c.id===readPosition()?.chapterId&&book?.id===readPosition()?.bookId)||chapters[0]||null;
   await loadScenes();
 }
 
@@ -175,7 +244,7 @@ $('chapterUp').onclick=()=>moveChapter(-1);$('chapterDown').onclick=()=>moveChap
 
 async function loadScenes(){
   scenes=chapter?await query(db('scenes').select('*').eq('chapter_id',chapter.id).order('sort_order')):[];
-  scene=scenes.find(s=>s.id===scene?.id)||scenes[0]||null;
+  scene=scenes.find(s=>s.id===scene?.id)||scenes.find(s=>s.id===readPosition()?.sceneId&&chapter?.id===readPosition()?.chapterId)||scenes[0]||null;
   renderChapters();renderScenes();openScene();updateBookStats();
 }
 function renderScenes(){
@@ -222,7 +291,7 @@ function openScene(){
   }catch{}
   $('editor').innerHTML=normalizeDoc(doc);
   $('pov').replaceChildren(new Option('Unassigned',''));characters.forEach(c=>$('pov').add(new Option(c.name,c.id)));
-  $('pov').value=scene.pov_character_id||'';count();dirty=false;loading=false;status('Saved');
+  $('pov').value=scene.pov_character_id||'';count();dirty=false;loading=false;status('Saved');restorePosition();
 }
 function count(){
   const wc=countWords($('editor').innerText);
@@ -244,7 +313,7 @@ function renderWordGoal(total){
 }
 function changed(){
   if(loading||!scene)return;
-  dirty=true;count();status('Unsaved changes');
+  dirty=true;count();status('Unsaved changes');rememberPosition();
   localStorage.setItem(draftKey(scene.id),JSON.stringify({html:$('editor').innerHTML,updated:Date.now()}));
   clearTimeout(timer);timer=setTimeout(()=>saveNow().catch(handleError),850);
 }
