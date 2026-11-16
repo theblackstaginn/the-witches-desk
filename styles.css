@@ -1243,3 +1243,92 @@ body:before,body:after{display:none}
     padding-bottom:10px;
   }
 }
+
+
+/* Mobile-only distraction-free parchment: no second editor or content copies. */
+.mobileFocusExit{display:none}
+@media(max-width:760px){
+  body:has(#workspace.writingFocus){overflow:hidden!important}
+  body:has(#workspace.writingFocus) .topbar{visibility:hidden!important}
+  #workspace.writingFocus{
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    display:block!important;
+    overflow:hidden!important;
+    z-index:10000!important;
+    border:0!important;
+    border-radius:0!important;
+    background:#ead1a6!important;
+  }
+  #workspace.writingFocus .mobileWriterTools,
+  #workspace.writingFocus .mobileDrawerBackdrop,
+  #workspace.writingFocus .leftRail,
+  #workspace.writingFocus .rightRail,
+  #workspace.writingFocus .documentTabs,
+  #workspace.writingFocus .editorMenus,
+  #workspace.writingFocus .toolbar,
+  #workspace.writingFocus .statusBar,
+  #workspace.writingFocus .documentBar{display:none!important}
+  #workspace.writingFocus .editorShell{
+    display:grid!important;
+    grid-template-rows:minmax(0,1fr)!important;
+    width:100%!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+  #workspace.writingFocus .paperStage{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:auto!important;
+    -webkit-overflow-scrolling:touch;
+    background:#ead1a6!important;
+  }
+  #workspace.writingFocus #editor{
+    box-sizing:border-box!important;
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:100%!important;
+    margin:0!important;
+    padding:calc(46px + env(safe-area-inset-top,0px)) 26px calc(48px + env(safe-area-inset-bottom,0px))!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    font-size:clamp(18px,4.6vw,21px)!important;
+    line-height:1.55!important;
+    background-size:100% 100%!important;
+  }
+  #workspace.writingFocus .mobileFocusExit{
+    display:block!important;
+    position:fixed!important;
+    top:env(safe-area-inset-top,0px)!important;
+    right:0!important;
+    width:48px!important;
+    height:48px!important;
+    padding:0!important;
+    border:0!important;
+    opacity:0!important;
+    background:transparent!important;
+    z-index:10002!important;
+    cursor:pointer;
+    touch-action:manipulation;
+  }
+  #workspace.writingFocus .mobileFocusExit:focus-visible{
+    opacity:1!important;
+    outline:2px solid #69406b!important;
+    background:rgba(255,255,255,.2)!important;
+  }
+}

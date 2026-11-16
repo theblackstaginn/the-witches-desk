@@ -761,12 +761,22 @@ function showDeskExport(){
 function showDeskHelp(){
   $('deskHelpDialog').showModal();
 }
+// Mobile focus keeps the SAME editor instance and autosave pipeline.
+const mobileFocusExit=document.createElement('button');
+mobileFocusExit.type='button';
+mobileFocusExit.className='mobileFocusExit';
+mobileFocusExit.setAttribute('aria-label','Exit writing focus mode');
+mobileFocusExit.title='Exit focus mode';
+mobileFocusExit.addEventListener('click',()=>{if($('workspace').classList.contains('writingFocus'))toggleDeskFocus()});
+$('workspace').appendChild(mobileFocusExit);
 function toggleDeskFocus(){
   const active=$('workspace').classList.toggle('writingFocus');
   focusButton.setAttribute('aria-pressed',String(active));
   focusButton.textContent=active?'☾ Exit Focus':'☾ Focus Mode';
+  mobileFocusExit.tabIndex=active?0:-1;
   if(scene)$('editor').focus();
 }
+mobileFocusExit.tabIndex=-1;
 function toggleDeskFullscreen(){
   if(document.fullscreenElement)return document.exitFullscreen();
   return $('workspace').requestFullscreen();
