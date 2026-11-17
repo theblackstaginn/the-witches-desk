@@ -183,7 +183,7 @@
         <button data-cmd="justifyRight" title="Align right">☰</button>
         <span class="toolbarSep"></span>
         <button id="findReplace" title="Find and replace">⌕</button>
-        <button id="synonymToolbarButton" type="button" title="Find synonyms for the selected word" aria-label="Find synonyms for the selected word">✧ Synonyms</button>
+        <button id="synonymToolbarButton" type="button" title="Open the thesaurus for the selected word" aria-label="Open thesaurus for the selected word">✧ Thesaurus</button>
         <button id="snapshot" title="Save revision">◈</button>
         <button id="revisions" title="Revisions">▦</button>
         <button id="exportMenu" title="Export">•••</button>
@@ -246,17 +246,23 @@
 
   <div id="deskMenu" class="deskMenu" role="menu" aria-label="Editor commands" hidden></div>
   <div id="synonymContextMenu" class="synonymContextMenu" role="menu" aria-label="Selected word actions" hidden>
-    <button id="synonymContextAction" type="button" role="menuitem">Synonyms</button>
+    <button id="synonymContextAction" type="button" role="menuitem">Thesaurus</button>
   </div>
-  <button id="synonymAction" class="synonymAction" type="button" aria-label="Find synonyms for the selected word" hidden>✧ Synonyms</button>
+  <button id="synonymAction" class="synonymAction" type="button" aria-label="Open thesaurus for the selected word" hidden>✧ Thesaurus</button>
   <section id="synonymPopover" class="synonymPopover" role="dialog" aria-labelledby="synonymWordHeading" hidden>
     <div class="synonymPopoverHeader">
-      <div><small>WORD FINDER</small><h2 id="synonymWordHeading">Synonyms</h2></div>
-      <button id="closeSynonymPopover" type="button" aria-label="Close synonyms">✕</button>
+      <div><small>WORD FINDER</small><h2 id="synonymWordHeading">Thesaurus</h2></div>
+      <button id="closeSynonymPopover" type="button" aria-label="Close thesaurus">✕</button>
     </div>
+    <nav id="synonymTabs" class="synonymTabs" role="tablist" aria-label="Thesaurus sections">
+      <button id="thesaurusTab-synonyms" type="button" role="tab" data-thesaurus-category="synonyms" aria-selected="true" aria-controls="synonymSuggestions" tabindex="0">Synonyms</button>
+      <button id="thesaurusTab-definitions" type="button" role="tab" data-thesaurus-category="definitions" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Definitions</button>
+      <button id="thesaurusTab-antonyms" type="button" role="tab" data-thesaurus-category="antonyms" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Antonyms</button>
+      <button id="thesaurusTab-related" type="button" role="tab" data-thesaurus-category="related" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Related</button>
+    </nav>
     <p id="synonymStatus" class="synonymStatus" role="status" aria-live="polite">Select a word to begin.</p>
-    <div id="synonymSuggestions" class="synonymSuggestions"></div>
-    <p class="synonymPrivacy">Only the selected word is sent to Datamuse. Its documentation says temporary query logs are discarded daily. No manuscript text is sent.</p>
+    <div id="synonymSuggestions" class="synonymSuggestions" role="tabpanel" aria-labelledby="thesaurusTab-synonyms" tabindex="0"></div>
+    <p class="synonymPrivacy">Only the selected word is sent to Datamuse for the chosen section. No sentence, scene, manuscript, user ID, or Supabase data is sent. Datamuse says temporary query logs are discarded daily.</p>
   </section>
 
   <dialog id="worldOverviewDialog" aria-labelledby="worldOverviewHeading">
@@ -433,6 +439,6 @@
   maybeShow();
 })();
 </script>
-<script type="module" src="./app.js?v=wd-synonyms-viewport-20261117"></script>
+<script type="module" src="./app.js?v=wd-extended-thesaurus-20261117"></script>
 </body>
 </html>
