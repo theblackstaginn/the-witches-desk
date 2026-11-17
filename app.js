@@ -1219,9 +1219,12 @@ function parseHistoricalThesaurus(payload){
   const content=documentFragment.querySelector('.mw-parser-output')||documentFragment.body;
   const headings=[...content.querySelectorAll('h2,h3,h4,h5,h6')];
   const entries=new Map();
-  let sense='';
+  let sense='',languagePeriod='';
   for(const heading of headings){
     const title=cleanThesaurusHeading(heading);
+    const normalizedTitle=title.toLocaleLowerCase();
+    if(normalizedTitle==='english')languagePeriod='';
+    else if(['old english','middle english','early modern english','victorian english'].includes(normalizedTitle)||normalizedTitle.includes('victorian')||normalizedTitle.includes('19th century')||normalizedTitle.includes('nineteenth century'))languagePeriod=title;
     if(/^Sense\s*:/i.test(title))sense=title.replace(/^Sense\s*:\s*/i,'');
     if(!/^Synonyms?$/i.test(title))continue;
     let sibling=heading.nextElementSibling;
@@ -1239,6 +1242,7 @@ function parseHistoricalThesaurus(payload){
           itemCopy.querySelectorAll('.reference,.mw-editsection,.mw-editsection-like').forEach(node=>node.remove());
           const itemText=itemCopy.textContent.replace(/\s+/g,' ').trim();
           const labels=[...itemText.matchAll(/\(([^)]+)\)/g)].map(match=>match[1].trim()).filter(Boolean);
+          if(languagePeriod&&!labels.includes(languagePeriod))labels.unshift(languagePeriod);
           const key=word.toLocaleLowerCase();
           const existing=entries.get(key);
           if(existing){
@@ -1344,7 +1348,7 @@ function renderThesaurusResults(category,data,requestToken){
 function wiktionaryThesaurusUrl(word){
   const url=new URL('https://en.wiktionary.org/w/api.php');
   url.searchParams.set('action','parse');
-  url.searchParams.set('page','Thesaurus:'+word.replace(/s+/g,'_'));
+  url.searchParams.set('page','Thesaurus:'+word.replace(/\s+/g,'_'));
   url.searchParams.set('prop','text');
   url.searchParams.set('format','json');
   url.searchParams.set('formatversion','2');
@@ -1352,7 +1356,7 @@ function wiktionaryThesaurusUrl(word){
   return url.toString();
 }
 function wiktionaryThesaurusPageLink(word){
-  return 'https://en.wiktionary.org/wiki/'+encodeURIComponent('Thesaurus:'+word.replace(/s+/g,'_'));
+  return 'https://en.wiktionary.org/wiki/'+encodeURIComponent('Thesaurus:'+word.replace(/\s+/g,'_'));
 }
 function thesaurusUrl(category,word){
   if(category==='historical')return wiktionaryThesaurusUrl(word);
