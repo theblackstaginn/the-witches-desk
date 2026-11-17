@@ -13,6 +13,9 @@ const draftKey=id=>'witches-desk-draft-'+id;
 let client,user,book,chapter,scene;
 let books=[],chapters=[],scenes=[],characters=[],notes=[],worldEntries=[];
 let timer,loading=false,dirty=false;
+// Cache saved manuscript words so the status bar updates without a query per keystroke.
+let projectSavedWords=null;
+let projectStatsRequest=0;
 
 
 const positionKey=()=>user?'witches-desk-position-v1-'+user.id:null;
@@ -172,6 +175,9 @@ $('deleteBook').onclick=async()=>{
 
 async function loadBook(){
   if(!book)return;
+  projectSavedWords=null;
+  projectStatsRequest++;
+  renderDeskStatusBar();
   $('povMode').value=book.pov_mode||'single';
   [chapters,characters,notes,worldEntries]=await Promise.all([
     query(db('chapters').select('*').eq('book_id',book.id).order('sort_order')),
@@ -237,7 +243,7 @@ async function moveChapter(delta){
       query(db('chapters').update({sort_order:other.sort_order}).eq('id',chapter.id)),
       query(db('chapters').update({sort_order:chapter.sort_order}).eq('id',other.id))
     ]);
-    [chapters[i],chapters[j]]=[chapters[j],chapters[i]];const t=chapter.sort_order;chapter.sort_order=other.sort_order;other.sort_order=t;renderChapters();toast('Chapter moved');
+    [chapters[i],chapters[j]]=[chapters[j],chapters[i]];const t=chapter.sort_order;chapter.sort_order=other.sort_order;other.sort_order=t;renderChapters();renderDeskStatusBar();toast('Chapter moved');
   }catch(e){handleError(e)}
 }
 $('chapterUp').onclick=()=>moveChapter(-1);$('chapterDown').onclick=()=>moveChapter(1);
@@ -279,6 +285,7 @@ $('sceneUp').onclick=()=>moveScene(-1);$('sceneDown').onclick=()=>moveScene(1);
 function clearEditor(){
   $('editor').innerHTML='';$('sceneTitle').value='';$('wordCount').textContent='0 words';$('editor').contentEditable='false';
   if($('mobileSceneLabel'))$('mobileSceneLabel').textContent='Choose a scene';
+  renderDeskStatusBar();
 }
 function openScene(){
   loading=true;
@@ -293,13 +300,29 @@ function openScene(){
   $('pov').replaceChildren(new Option('Unassigned',''));characters.forEach(c=>$('pov').add(new Option(c.name,c.id)));
   $('pov').value=scene.pov_character_id||'';count();dirty=false;loading=false;status('Saved');restorePosition();
 }
+function renderDeskStatusBar(){
+  if(!book||!chapter){
+    $('chapterWordMirror').textContent='—';
+    $('chapterNumber').textContent='—';
+    $('projectWordMirror').textContent='—';
+    return;
+  }
+  const chapterIndex=chapters.findIndex(item=>item.id===chapter.id);
+  const currentSaved=scene?(Number(scene.word_count)||0):0;
+  const currentLive=scene?countWords($('editor').innerText):0;
+  const chapterSaved=scenes.reduce((total,item)=>total+(Number(item.word_count)||0),0);
+  $('chapterWordMirror').textContent=Math.max(0,chapterSaved-currentSaved+currentLive).toLocaleString();
+  $('chapterNumber').textContent=chapterIndex<0?'—':(chapterIndex+1).toLocaleString();
+  $('projectWordMirror').textContent=projectSavedWords===null?'…':Math.max(0,projectSavedWords-currentSaved+currentLive).toLocaleString();
+}
 function count(){
   const wc=countWords($('editor').innerText);
   $('wordCount').textContent=wc+' words';
-  // The manuscript goal includes saved scenes plus the current unsaved edit.
-  const savedTotal=scenes.reduce((total,item)=>total+(Number(item.word_count)||0),0);
+  // Include saved scenes in other chapters plus the current unsaved edit.
+  const savedTotal=projectSavedWords??scenes.reduce((total,item)=>total+(Number(item.word_count)||0),0);
   const currentSaved=scene?(Number(scene.word_count)||0):0;
   renderWordGoal(savedTotal-currentSaved+(scene?wc:0));
+  renderDeskStatusBar();
 }
 function renderWordGoal(total){
   const goal=90000;
@@ -327,7 +350,10 @@ async function saveNow(){
     const saved=await query(db('scenes').update({
       title,content:{html},pov_character_id:pov,word_count:wc,updated_at:new Date().toISOString()
     }).eq('id',current.id).select().single());
-    Object.assign(current,saved);dirty=false;localStorage.removeItem(draftKey(current.id));renderScenes();status('Saved');updateBookStats();
+    const previousWords=Number(current.word_count)||0;
+    Object.assign(current,saved);
+    if(projectSavedWords!==null)projectSavedWords+=wc-previousWords;
+    dirty=false;localStorage.removeItem(draftKey(current.id));renderScenes();status('Saved');renderDeskStatusBar();updateBookStats();
   }catch(e){dirty=true;status('Offline / unsaved');throw e}
 }
 $('povMode').onchange=async()=>{
@@ -415,14 +441,25 @@ async function allBookScenes(){
   return cs.map(c=>({...c,scenes:ss.filter(s=>s.chapter_id===c.id).sort((a,b)=>a.sort_order-b.sort_order)}));
 }
 async function updateBookStats(){
-  if(!book){$('bookWordCount').textContent='0 manuscript words';$('sceneCount').textContent='0 scenes';return}
+  const request=++projectStatsRequest;
+  if(!book){
+    projectSavedWords=null;
+    $('bookWordCount').textContent='0 manuscript words';
+    $('sceneCount').textContent='0 scenes';
+    renderDeskStatusBar();
+    return;
+  }
+  const bookId=book.id;
   try{
-    const rows=await query(db('scenes').select('word_count').eq('book_id',book.id));
+    const rows=await query(db('scenes').select('word_count').eq('book_id',bookId));
+    if(book?.id!==bookId||request!==projectStatsRequest)return;
     const savedTotal=rows.reduce((a,s)=>a+(Number(s.word_count)||0),0);
+    projectSavedWords=savedTotal;
     $('bookWordCount').textContent=savedTotal.toLocaleString()+' manuscript words';
     const currentSaved=scene?(Number(scene.word_count)||0):0;
     renderWordGoal(savedTotal-currentSaved+(scene?countWords($('editor').innerText):0));
     $('sceneCount').textContent=rows.length+' scene'+(rows.length===1?'':'s');
+    renderDeskStatusBar();
   }catch{}
 }
 
