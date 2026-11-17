@@ -583,7 +583,12 @@ body:before,body:after{display:none}
 .synonymSuggestions{display:grid;gap:6px;overflow:auto;overscroll-behavior:contain;padding:0 2px 4px}
 .synonymSuggestions button{min-height:42px;padding:9px 11px;border:1px solid rgba(157,102,194,.48);border-radius:7px;background:rgba(63,29,84,.58);color:#f4dfee;text-align:left;font:15px Georgia,serif;cursor:pointer;touch-action:manipulation}
 .synonymSuggestions button:hover,.synonymSuggestions button:focus-visible{outline:none;border-color:#e0b35e;background:rgba(120,54,149,.72)}
+.synonymSuggestions button .synonymSuggestionWord{display:block}
+.synonymSuggestions button .synonymSuggestionMeta{display:block;margin-top:3px;color:#e0b35e;font:11px/1.25 Georgia,serif}
+.synonymSuggestions button.synonymShowMore{text-align:center;color:#fff0cf;border-color:rgba(225,174,97,.58);font:13px Georgia,serif}
 .synonymPrivacy{margin:8px 2px 0;padding-top:7px;border-top:1px solid rgba(225,174,97,.25);color:#c9b8c7;font:11px/1.35 Georgia,serif}
+.synonymPrivacy a{display:inline-block;margin-top:3px;color:#f0c877;text-decoration:underline;text-underline-offset:2px}
+.synonymPrivacy a:focus-visible{outline:2px solid #e0b35e;outline-offset:2px}
 .deskColorPicker{
   flex:0 0 24px;width:24px;min-width:24px;height:28px;
   padding:2px;border:1px solid rgba(206,153,75,.5);border-radius:4px;
