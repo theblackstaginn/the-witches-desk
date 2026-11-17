@@ -560,13 +560,21 @@ body:before,body:after{display:none}
   font:600 15px Georgia,serif;cursor:pointer;touch-action:manipulation;
 }
 .synonymPopover{
-  position:fixed;z-index:10006;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;
+  position:fixed;z-index:10006;display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;
   width:min(340px,calc(100vw - 24px));max-height:min(70vh,440px);overflow:hidden;
   padding:13px;border:1px solid rgba(225,174,97,.82);border-radius:12px;
   background:linear-gradient(145deg,rgba(39,18,53,.99),rgba(16,8,27,.99));color:#f4e9ef;
   box-shadow:0 18px 50px #000c,inset 0 1px rgba(255,233,181,.14);
 }
 .synonymPopover[hidden],.synonymContextMenu[hidden],.synonymAction[hidden]{display:none!important}
+.synonymTabs{display:flex;gap:4px;overflow-x:auto;padding:7px 0 2px;scrollbar-width:thin}
+.synonymTabs button{flex:1 0 auto;min-height:36px;padding:6px 8px;border:1px solid rgba(157,102,194,.42);border-radius:7px;background:rgba(63,29,84,.38);color:#e8d8e8;font:12px Georgia,serif;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.synonymTabs button[aria-selected="true"]{border-color:#e0b35e;background:rgba(120,54,149,.68);color:#fff0cf}
+.synonymTabs button:focus-visible{outline:2px solid #e0b35e;outline-offset:1px}
+.synonymDefinitionNote{margin:0;padding:6px 9px;color:#e0b35e;font:12px Georgia,serif}
+.synonymDefinition{padding:8px 10px;border:1px solid rgba(157,102,194,.38);border-radius:7px;background:rgba(63,29,84,.3)}
+.synonymDefinition small{color:#e0b35e;font:700 11px Georgia,serif}
+.synonymDefinition p{margin:4px 0 0;color:#f4e9ef;font:14px/1.45 Georgia,serif}
 .synonymPopoverHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 8px;border-bottom:1px solid rgba(225,174,97,.35)}
 .synonymPopoverHeader small{color:#e0b35e;font:700 10px/1.2 Georgia,serif;letter-spacing:.12em}
 .synonymPopoverHeader h2{margin:3px 0 0;font:italic 19px/1.2 Georgia,serif;color:#fff0cf;overflow-wrap:anywhere}
