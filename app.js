@@ -1202,6 +1202,7 @@ function renderSynonymSuggestions(words,requestToken){
     button.addEventListener('click',()=>replaceSelectedWithSynonym(word));
     list.append(button);
   });
+  if(synonymTargetRange)positionSynonymPopover(synonymTargetRange);
 }
 async function openSynonymLookup(range,word){
   if(!scene||!range||!word){toast('Select one word to find synonyms');return}
