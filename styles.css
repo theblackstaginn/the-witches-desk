@@ -539,6 +539,43 @@ body:before,body:after{display:none}
   outline:none;border-color:rgba(223,174,91,.4);background:rgba(120,54,149,.5);
 }
 .deskMenu button:disabled{opacity:.4;cursor:not-allowed}
+#synonymToolbarButton{min-width:max-content;min-height:40px;padding-inline:11px;border-color:rgba(224,167,47,.62);color:#ffe4a7;touch-action:manipulation}
+.synonymContextMenu{
+  position:fixed;z-index:10004;min-width:170px;padding:7px;
+  border:1px solid rgba(225,174,97,.78);border-radius:9px;
+  background:linear-gradient(140deg,rgba(39,18,53,.98),rgba(16,8,27,.99));
+  box-shadow:0 14px 38px #000b,inset 0 1px rgba(255,233,181,.14);
+}
+.synonymContextMenu button{
+  width:100%;min-height:42px;padding:9px 12px;text-align:left;
+  border:1px solid transparent;border-radius:6px;background:transparent;
+  color:#f3e6ef;font:15px/1.25 Georgia,serif;cursor:pointer;touch-action:manipulation;
+}
+.synonymContextMenu button:hover,.synonymContextMenu button:focus-visible{outline:none;border-color:rgba(223,174,91,.4);background:rgba(120,54,149,.5)}
+.synonymAction{
+  position:fixed;z-index:10005;right:max(14px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));
+  min-height:48px;padding:0 17px;border:1px solid #e0b35e;border-radius:999px;
+  background:linear-gradient(145deg,#482451,#21112d);color:#ffe7b7;
+  box-shadow:0 8px 26px #0009,inset 0 1px rgba(255,236,192,.18);
+  font:600 15px Georgia,serif;cursor:pointer;touch-action:manipulation;
+}
+.synonymPopover{
+  position:fixed;z-index:10006;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;
+  width:min(340px,calc(100vw - 24px));max-height:min(70vh,440px);overflow:hidden;
+  padding:13px;border:1px solid rgba(225,174,97,.82);border-radius:12px;
+  background:linear-gradient(145deg,rgba(39,18,53,.99),rgba(16,8,27,.99));color:#f4e9ef;
+  box-shadow:0 18px 50px #000c,inset 0 1px rgba(255,233,181,.14);
+}
+.synonymPopover[hidden],.synonymContextMenu[hidden],.synonymAction[hidden]{display:none!important}
+.synonymPopoverHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 8px;border-bottom:1px solid rgba(225,174,97,.35)}
+.synonymPopoverHeader small{color:#e0b35e;font:700 10px/1.2 Georgia,serif;letter-spacing:.12em}
+.synonymPopoverHeader h2{margin:3px 0 0;font:italic 19px/1.2 Georgia,serif;color:#fff0cf;overflow-wrap:anywhere}
+.synonymPopoverHeader button{flex:0 0 42px;width:42px;height:42px;border:1px solid rgba(225,174,97,.45);border-radius:8px;background:rgba(255,255,255,.04);color:#f4e9ef;font-size:20px;cursor:pointer;touch-action:manipulation}
+.synonymStatus{margin:9px 2px;color:#e6d4e2;font:13px/1.4 Georgia,serif}
+.synonymSuggestions{display:grid;gap:6px;overflow:auto;overscroll-behavior:contain;padding:0 2px 4px}
+.synonymSuggestions button{min-height:42px;padding:9px 11px;border:1px solid rgba(157,102,194,.48);border-radius:7px;background:rgba(63,29,84,.58);color:#f4dfee;text-align:left;font:15px Georgia,serif;cursor:pointer;touch-action:manipulation}
+.synonymSuggestions button:hover,.synonymSuggestions button:focus-visible{outline:none;border-color:#e0b35e;background:rgba(120,54,149,.72)}
+.synonymPrivacy{margin:8px 2px 0;padding-top:7px;border-top:1px solid rgba(225,174,97,.25);color:#c9b8c7;font:11px/1.35 Georgia,serif}
 .deskColorPicker{
   flex:0 0 24px;width:24px;min-width:24px;height:28px;
   padding:2px;border:1px solid rgba(206,153,75,.5);border-radius:4px;
@@ -734,6 +771,7 @@ body:before,body:after{display:none}
     overflow-x:auto;scrollbar-width:thin;
   }
   .toolbar button,.toolbar select{height:32px;min-height:32px;font-size:12px}
+  #synonymToolbarButton{height:40px;min-height:40px;font-size:13px}
   .formatSelect{width:105px}.fontSelect{width:106px}.sizeSelect{width:54px}
   .paperStage{
     display:flex;min-width:0;min-height:0;

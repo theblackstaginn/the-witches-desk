@@ -288,6 +288,7 @@ function clearEditor(){
   renderDeskStatusBar();
 }
 function openScene(){
+  closeSynonymUi();
   loading=true;
   if(!scene){clearEditor();loading=false;return}
   $('editor').contentEditable='true';$('sceneTitle').value=scene.title;
@@ -1028,6 +1029,244 @@ async function runDeskMenuAction(action){
     case 'guide':case 'about':return showDeskHelp();
   }
 }
+
+// Synonym lookup is deliberately word-only: no scene text or manuscript context leaves the editor.
+const synonymPopover=$('synonymPopover');
+const synonymContextMenu=$('synonymContextMenu');
+const synonymAction=$('synonymAction');
+let synonymTargetRange=null;
+let synonymTargetWord='';
+let synonymTargetSceneId=null;
+let synonymRequestToken=0;
+let synonymRequestController=null;
+let synonymRequestTimeout=null;
+let applyingSynonymReplacement=false;
+
+function selectedSynonymWord(){
+  const selection=window.getSelection();
+  const editor=$('editor');
+  if(!selection||!selection.rangeCount)return null;
+  const source=selection.getRangeAt(0);
+  if(source.collapsed||!editor.contains(source.startContainer)||!editor.contains(source.endContainer))return null;
+  const text=source.toString();
+  const match=text.match(/^([^\p{L}\p{M}\p{N}]*)([\p{L}\p{M}\p{N}]+(?:[’'-][\p{L}\p{M}\p{N}]+)*)([^\p{L}\p{M}\p{N}]*)$/u);
+  if(!match||Array.from(match[2]).length>80)return null;
+  const offset=textOffset(editor,source.startContainer,source.startOffset)+match[1].length;
+  const start=synonymNodeAtOffset(editor,offset,true),end=synonymNodeAtOffset(editor,offset+match[2].length,false);
+  try{
+    const range=document.createRange();range.setStart(start.node,start.offset);range.setEnd(end.node,end.offset);
+    return {range,word:match[2].normalize('NFC')};
+  }catch{return null}
+}
+function synonymNodeAtOffset(root,offset,preferNext){
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];
+  let node;while((node=walker.nextNode()))nodes.push(node);
+  let remaining=Math.max(0,offset);
+  for(let i=0;i<nodes.length;i++){
+    node=nodes[i];
+    if(remaining<node.length)return {node,offset:remaining};
+    if(remaining===node.length){
+      if(preferNext&&nodes[i+1])return {node:nodes[i+1],offset:0};
+      return {node,offset:node.length};
+    }
+    remaining-=node.length;
+  }
+  return node?{node,offset:node.length}:{node:root,offset:root.childNodes.length};
+}
+function rememberSynonymTarget(range,word){
+  if(!range||!scene)return;
+  synonymTargetRange=range.cloneRange();
+  synonymTargetWord=word;
+  synonymTargetSceneId=scene.id;
+}
+function clearSynonymTarget(){synonymTargetRange=null;synonymTargetWord='';synonymTargetSceneId=null}
+function synonymTargetIsValid(){
+  return Boolean(scene&&synonymTargetSceneId===scene.id&&synonymTargetRange&&
+    $('editor').contains(synonymTargetRange.startContainer)&&$('editor').contains(synonymTargetRange.endContainer)&&
+    synonymTargetRange.toString().normalize('NFC')===synonymTargetWord);
+}
+function closeSynonymUi({clearTarget=false}={}){
+  synonymRequestToken++;
+  if(synonymRequestTimeout)clearTimeout(synonymRequestTimeout);
+  synonymRequestTimeout=null;
+  synonymRequestController?.abort();
+  synonymRequestController=null;
+  if(synonymPopover)synonymPopover.hidden=true;
+  if(synonymContextMenu)synonymContextMenu.hidden=true;
+  if(synonymAction)synonymAction.hidden=true;
+  if(clearTarget)clearSynonymTarget();
+}
+function restoreSynonymSelection(){
+  if(!synonymTargetIsValid())return;
+  try{
+    $('editor').focus({preventScroll:true});
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(synonymTargetRange);
+    lastEditorRange=synonymTargetRange.cloneRange();
+  }catch{}
+}
+function synonymViewportIsTouchFriendly(){
+  return window.matchMedia('(hover: none)').matches||window.matchMedia('(max-width: 760px)').matches;
+}
+document.addEventListener('selectionchange',()=>{
+  const selected=selectedSynonymWord();
+  if(selected){
+    rememberSynonymTarget(selected.range,selected.word);
+    if(synonymViewportIsTouchFriendly()&&synonymPopover.hidden)synonymAction.hidden=false;
+    return;
+  }
+  const selection=window.getSelection();
+  if(selection?.anchorNode&&$('editor').contains(selection.anchorNode)){
+    synonymAction.hidden=true;
+    if(synonymPopover.hidden)clearSynonymTarget();
+  }
+});
+function placeSynonymContextMenu(x,y){
+  synonymContextMenu.hidden=false;
+  const width=synonymContextMenu.offsetWidth,height=synonymContextMenu.offsetHeight;
+  synonymContextMenu.style.left=Math.max(8,Math.min(x,window.innerWidth-width-8))+'px';
+  synonymContextMenu.style.top=Math.max(8,Math.min(y,window.innerHeight-height-8))+'px';
+}
+$('editor').addEventListener('contextmenu',event=>{
+  const selected=selectedSynonymWord();
+  if(!selected)return;
+  event.preventDefault();
+  closeSynonymUi();
+  rememberSynonymTarget(selected.range,selected.word);
+  placeSynonymContextMenu(event.clientX,event.clientY);
+});
+function selectionForSynonyms(){
+  const selected=selectedSynonymWord();
+  if(selected){rememberSynonymTarget(selected.range,selected.word);return selected}
+  return synonymTargetIsValid()?{range:synonymTargetRange.cloneRange(),word:synonymTargetWord}:null;
+}
+function positionSynonymPopover(range){
+  const rect=range.getBoundingClientRect();
+  const width=synonymPopover.offsetWidth,height=synonymPopover.offsetHeight;
+  const left=Math.max(12,Math.min(rect.left||12,window.innerWidth-width-12));
+  let top=rect.bottom+10;
+  if(top+height>window.innerHeight-12)top=rect.top-height-10;
+  top=Math.max(12,Math.min(top,window.innerHeight-height-12));
+  synonymPopover.style.left=left+'px';synonymPopover.style.top=top+'px';
+}
+function preserveWordCase(original,replacement){
+  const letters=original.replace(/[’'-]/g,'');
+  if(letters&&letters===letters.toUpperCase())return replacement.toUpperCase();
+  const first=Array.from(original)[0]||'';
+  if(first&&first!==first.toLowerCase()&&first===first.toUpperCase()){
+    const replacementLetters=Array.from(replacement);
+    return (replacementLetters[0]||'').toUpperCase()+replacementLetters.slice(1).join('');
+  }
+  return replacement;
+}
+function replaceSelectedWithSynonym(value){
+  if(!synonymTargetIsValid()){
+    $('synonymStatus').textContent='That word is no longer selected. Select it again to replace it.';
+    return;
+  }
+  const range=synonymTargetRange.cloneRange();
+  const replacement=preserveWordCase(synonymTargetWord,value);
+  const scroller=writingScroller(),scrollTop=scroller?.scrollTop||0;
+  try{
+    applyingSynonymReplacement=true;
+    range.deleteContents();
+    const node=document.createTextNode(replacement);
+    range.insertNode(node);
+    const caret=document.createRange();caret.setStartAfter(node);caret.collapse(true);
+    const selection=window.getSelection();selection.removeAllRanges();selection.addRange(caret);
+    $('editor').focus({preventScroll:true});
+    lastEditorRange=caret.cloneRange();
+    synonymTargetRange=null;synonymTargetWord='';synonymTargetSceneId=null;
+    closeSynonymUi({clearTarget:true});
+    changed();rememberPosition();
+    if(scroller)scroller.scrollTop=scrollTop;
+  }catch{
+    $('synonymStatus').textContent='The selected word could not be replaced. Please try again.';
+  }finally{applyingSynonymReplacement=false}
+}
+function renderSynonymSuggestions(words,requestToken){
+  const suggestions=[];
+  const seen=new Set([synonymTargetWord.toLocaleLowerCase()]);
+  for(const item of words){
+    const word=typeof item?.word==='string'?item.word.trim():'';
+    const key=word.toLocaleLowerCase();
+    if(word&&!seen.has(key)){seen.add(key);suggestions.push(word)}
+    if(suggestions.length>=12)break;
+  }
+  if(requestToken!==synonymRequestToken)return;
+  const list=$('synonymSuggestions');list.replaceChildren();
+  if(!suggestions.length){$('synonymStatus').textContent='No synonyms were found for this word.';return}
+  $('synonymStatus').textContent='Choose a word to replace “'+synonymTargetWord+'”.';
+  suggestions.forEach(word=>{
+    const button=document.createElement('button');button.type='button';button.textContent=word;
+    button.addEventListener('pointerdown',event=>event.preventDefault());
+    button.addEventListener('click',()=>replaceSelectedWithSynonym(word));
+    list.append(button);
+  });
+}
+async function openSynonymLookup(range,word){
+  if(!scene||!range||!word){toast('Select one word to find synonyms');return}
+  closeSynonymUi();
+  rememberSynonymTarget(range,word);
+  $('synonymWordHeading').textContent='“'+word+'”';
+  $('synonymStatus').textContent='Looking for synonyms…';
+  $('synonymSuggestions').replaceChildren();
+  synonymPopover.hidden=false;
+  positionSynonymPopover(synonymTargetRange);
+  const requestToken=++synonymRequestToken;
+  const controller=new AbortController();synonymRequestController=controller;
+  synonymRequestTimeout=setTimeout(()=>controller.abort(),9000);
+  try{
+    const url=new URL('https://api.datamuse.com/words');
+    url.searchParams.set('rel_syn',word);
+    url.searchParams.set('max','12');
+    const response=await fetch(url.toString(),{
+      method:'GET',headers:{Accept:'application/json'},credentials:'omit',cache:'no-store',
+      referrerPolicy:'no-referrer',signal:controller.signal
+    });
+    if(!response.ok)throw new Error('lookup failed');
+    const data=await response.json();
+    if(!Array.isArray(data))throw new Error('unexpected response');
+    renderSynonymSuggestions(data,requestToken);
+  }catch{
+    if(requestToken===synonymRequestToken&& !synonymPopover.hidden){
+      $('synonymStatus').textContent='The word service is unavailable right now. Try again in a moment.';
+    }
+  }finally{
+    if(requestToken===synonymRequestToken){
+      if(synonymRequestTimeout)clearTimeout(synonymRequestTimeout);
+      synonymRequestTimeout=null;synonymRequestController=null;
+    }
+  }
+}
+function openSynonymsFromCurrentSelection(){
+  const selected=selectionForSynonyms();
+  if(!selected){toast('Select a single word first');return}
+  openSynonymLookup(selected.range,selected.word);
+}
+[$('synonymToolbarButton'),synonymAction].forEach(button=>{
+  button.addEventListener('pointerdown',()=>{
+    const selected=selectedSynonymWord();
+    if(selected)rememberSynonymTarget(selected.range,selected.word);
+  });
+  button.addEventListener('click',openSynonymsFromCurrentSelection);
+});
+$('synonymContextAction').addEventListener('pointerdown',event=>event.preventDefault());
+$('synonymContextAction').addEventListener('click',()=>{
+  if(synonymTargetIsValid())openSynonymLookup(synonymTargetRange.cloneRange(),synonymTargetWord);
+});
+$('closeSynonymPopover').addEventListener('pointerdown',event=>event.preventDefault());
+$('closeSynonymPopover').addEventListener('click',()=>{closeSynonymUi();restoreSynonymSelection()});
+$('editor').addEventListener('input',()=>{if(!applyingSynonymReplacement)closeSynonymUi()});
+document.addEventListener('pointerdown',event=>{
+  if(!synonymPopover.hidden&&!synonymPopover.contains(event.target)&&
+     !event.target.closest('#synonymToolbarButton,#synonymAction,#synonymContextMenu'))closeSynonymUi();
+  if(!synonymContextMenu.hidden&&!synonymContextMenu.contains(event.target)&&!$('editor').contains(event.target))synonymContextMenu.hidden=true;
+});
+document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&(!synonymPopover.hidden||!synonymContextMenu.hidden||!synonymAction.hidden)){
+    event.preventDefault();closeSynonymUi();restoreSynonymSelection();
+  }
+});
 
 /* Mobile desk navigation - 2026-11-12 */
 const mobileViewport=window.matchMedia('(max-width:760px)');

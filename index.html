@@ -183,6 +183,7 @@
         <button data-cmd="justifyRight" title="Align right">☰</button>
         <span class="toolbarSep"></span>
         <button id="findReplace" title="Find and replace">⌕</button>
+        <button id="synonymToolbarButton" type="button" title="Find synonyms for the selected word" aria-label="Find synonyms for the selected word">✧ Synonyms</button>
         <button id="snapshot" title="Save revision">◈</button>
         <button id="revisions" title="Revisions">▦</button>
         <button id="exportMenu" title="Export">•••</button>
@@ -244,6 +245,19 @@
   </main>
 
   <div id="deskMenu" class="deskMenu" role="menu" aria-label="Editor commands" hidden></div>
+  <div id="synonymContextMenu" class="synonymContextMenu" role="menu" aria-label="Selected word actions" hidden>
+    <button id="synonymContextAction" type="button" role="menuitem">Synonyms</button>
+  </div>
+  <button id="synonymAction" class="synonymAction" type="button" aria-label="Find synonyms for the selected word" hidden>✧ Synonyms</button>
+  <section id="synonymPopover" class="synonymPopover" role="dialog" aria-labelledby="synonymWordHeading" hidden>
+    <div class="synonymPopoverHeader">
+      <div><small>WORD FINDER</small><h2 id="synonymWordHeading">Synonyms</h2></div>
+      <button id="closeSynonymPopover" type="button" aria-label="Close synonyms">✕</button>
+    </div>
+    <p id="synonymStatus" class="synonymStatus" role="status" aria-live="polite">Select a word to begin.</p>
+    <div id="synonymSuggestions" class="synonymSuggestions"></div>
+    <p class="synonymPrivacy">Only the selected word is sent to Datamuse. Its documentation says temporary query logs are discarded daily. No manuscript text is sent.</p>
+  </section>
 
   <dialog id="worldOverviewDialog" aria-labelledby="worldOverviewHeading">
     <div class="dialogHead"><div><small>THE STORY UNIVERSE</small><h2 id="worldOverviewHeading">Worldbuilding Atlas</h2></div><button type="button" data-close="worldOverviewDialog" aria-label="Close world overview">✕</button></div>
@@ -419,6 +433,6 @@
   maybeShow();
 })();
 </script>
-<script type="module" src="./app.js?v=wd-resume-20261114"></script>
+<script type="module" src="./app.js?v=wd-synonyms-20261117"></script>
 </body>
 </html>
