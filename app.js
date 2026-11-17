@@ -1048,8 +1048,11 @@ const thesaurusCategories={
   synonyms:{label:'synonyms',parameter:'rel_syn'},
   definitions:{label:'definitions',parameter:'sp'},
   antonyms:{label:'antonyms',parameter:'rel_ant'},
-  related:{label:'related words',parameter:'ml'}
+  related:{label:'related words',parameter:'ml'},
+  historical:{label:'historical synonyms',parameter:null}
 };
+const thesaurusPageSize=24;
+let thesaurusDisplayLimit=thesaurusPageSize;
 const partOfSpeechLabels={n:'Noun',v:'Verb',adj:'Adjective',adv:'Adverb',u:'Other'};
 
 function selectedSynonymWord(){
@@ -1204,6 +1207,70 @@ function setThesaurusTabs(){
   });
   $('synonymSuggestions').setAttribute('aria-labelledby','thesaurusTab-'+activeThesaurusCategory);
 }
+function cleanThesaurusHeading(element){
+  const copy=element.cloneNode(true);
+  copy.querySelectorAll('.mw-editsection,.mw-editsection-like').forEach(node=>node.remove());
+  return copy.textContent.replace(/\s+/g,' ').trim();
+}
+function parseHistoricalThesaurus(payload){
+  const markup=typeof payload?.parse?.text==='string'?payload.parse.text:payload?.parse?.text?.['*'];
+  if(typeof markup!=='string'||!markup)return [];
+  const documentFragment=new DOMParser().parseFromString(markup,'text/html');
+  const content=documentFragment.querySelector('.mw-parser-output')||documentFragment.body;
+  const headings=[...content.querySelectorAll('h2,h3,h4,h5,h6')];
+  const entries=new Map();
+  let sense='';
+  for(const heading of headings){
+    const title=cleanThesaurusHeading(heading);
+    if(/^Sense\s*:/i.test(title))sense=title.replace(/^Sense\s*:\s*/i,'');
+    if(!/^Synonyms?$/i.test(title))continue;
+    let sibling=heading.nextElementSibling;
+    while(sibling&&!/^H[1-6]$/.test(sibling.tagName)){
+      const lists=sibling.matches('ul')?[sibling]:[...sibling.querySelectorAll('ul')];
+      for(const list of lists){
+        for(const item of [...list.children].filter(child=>child.tagName==='LI')){
+          const link=[...item.querySelectorAll('a')].find(anchor=>{
+            const label=anchor.textContent.trim();
+            return label&&!/^(?:edit|⇒\s*thesaurus)$/i.test(label);
+          });
+          const word=link?.textContent.replace(/\s+/g,' ').trim();
+          if(!word||word.toLocaleLowerCase()===synonymTargetWord.toLocaleLowerCase())continue;
+          const itemCopy=item.cloneNode(true);
+          itemCopy.querySelectorAll('.reference,.mw-editsection,.mw-editsection-like').forEach(node=>node.remove());
+          const itemText=itemCopy.textContent.replace(/\s+/g,' ').trim();
+          const labels=[...itemText.matchAll(/\(([^)]+)\)/g)].map(match=>match[1].trim()).filter(Boolean);
+          const key=word.toLocaleLowerCase();
+          const existing=entries.get(key);
+          if(existing){
+            existing.labels=[...new Set([...existing.labels,...labels])];
+            if(sense&&!existing.sense)existing.sense=sense;
+          }else entries.set(key,{word,labels,sense});
+        }
+      }
+      sibling=sibling.nextElementSibling;
+    }
+  }
+  return [...entries.values()].sort((a,b)=>historicalEraPriority(a)-historicalEraPriority(b));
+}
+function historicalEraPriority(entry){
+  const text=[...(entry.labels||[]),entry.sense||''].join(' ').toLocaleLowerCase();
+  if(/\b(victorian|19th[- ]century|nineteenth[- ]century)\b/.test(text))return 0;
+  if(/\b(middle english|medieval|middle-english)\b/.test(text))return 1;
+  if(/\b(early modern english|early-modern english)\b/.test(text))return 2;
+  if(/\b(archaic|obsolete|dated|historical)\b/.test(text))return 3;
+  return 4;
+}
+function thesaurusSuggestionButton(word,labels=[]){
+  const button=document.createElement('button');button.type='button';
+  button.setAttribute('aria-label','Replace '+synonymTargetWord+' with '+word+(labels.length?', '+labels.join(', '):''));
+  const term=document.createElement('span');term.className='synonymSuggestionWord';term.textContent=word;button.append(term);
+  if(labels.length){
+    const badge=document.createElement('small');badge.className='synonymSuggestionMeta';badge.textContent=labels.join(' · ');button.append(badge);
+  }
+  button.addEventListener('pointerdown',event=>event.preventDefault());
+  button.addEventListener('click',()=>replaceSelectedWithWord(word));
+  return button;
+}
 function renderThesaurusResults(category,data,requestToken){
   if(requestToken!==synonymRequestToken||category!==activeThesaurusCategory)return;
   const list=$('synonymSuggestions');list.replaceChildren();
@@ -1234,29 +1301,61 @@ function renderThesaurusResults(category,data,requestToken){
     if(synonymTargetRange)positionSynonymPopover(synonymTargetRange);
     return;
   }
-  const words=[],seen=new Set([synonymTargetWord.toLocaleLowerCase()]);
-  for(const item of data){
-    const word=typeof item?.word==='string'?item.word.trim():'';
-    const key=word.toLocaleLowerCase();
-    if(word&&!seen.has(key)){seen.add(key);words.push(word)}
-    if(words.length>=12)break;
+  let suggestions=[];
+  if(category==='historical'){
+    suggestions=Array.isArray(data)?data:[];
+    if(!suggestions.length){
+      $('synonymStatus').textContent='No historical synonym list was found for this word. The Wiktionary source link may still offer related entries.';
+      if(synonymTargetRange)positionSynonymPopover(synonymTargetRange);
+      return;
+    }
+  }else{
+    const seen=new Set([synonymTargetWord.toLocaleLowerCase()]);
+    for(const item of data){
+      const word=typeof item?.word==='string'?item.word.trim():'';
+      const key=word.toLocaleLowerCase();
+      if(word&&!seen.has(key)){seen.add(key);suggestions.push({word,labels:[]})}
+    }
   }
-  if(!words.length){
+  if(!suggestions.length){
     $('synonymStatus').textContent='No '+thesaurusCategories[category].label+' were found for this word.';
     if(synonymTargetRange)positionSynonymPopover(synonymTargetRange);
     return;
   }
-  $('synonymStatus').textContent='Choose a '+thesaurusCategories[category].label.slice(0,-1)+' to replace “'+synonymTargetWord+'”.';
-  words.forEach(word=>{
-    const button=document.createElement('button');button.type='button';button.textContent=word;
-    button.setAttribute('aria-label','Replace '+synonymTargetWord+' with '+word);
-    button.addEventListener('pointerdown',event=>event.preventDefault());
-    button.addEventListener('click',()=>replaceSelectedWithWord(word));
-    list.append(button);
-  });
+  const visible=suggestions.slice(0,thesaurusDisplayLimit);
+  visible.forEach(item=>list.append(thesaurusSuggestionButton(item.word,item.labels||[])));
+  if(visible.length<suggestions.length){
+    const more=document.createElement('button');more.type='button';more.className='synonymShowMore';
+    more.textContent='Show '+Math.min(thesaurusPageSize,suggestions.length-visible.length)+' more ('+(suggestions.length-visible.length)+' remaining)';
+    more.addEventListener('pointerdown',event=>event.preventDefault());
+    more.addEventListener('click',()=>{
+      thesaurusDisplayLimit+=thesaurusPageSize;
+      renderThesaurusResults(category,data,requestToken);
+    });
+    list.append(more);
+  }
+  if(category==='historical'){
+    $('synonymStatus').textContent='Showing '+visible.length+' of '+suggestions.length+' Wiktionary synonyms. Period labels are shown as the source provides them.';
+  }else{
+    $('synonymStatus').textContent='Showing '+visible.length+' of '+suggestions.length+' synonyms. Choose one to replace “'+synonymTargetWord+'”.';
+  }
   if(synonymTargetRange)positionSynonymPopover(synonymTargetRange);
 }
+function wiktionaryThesaurusUrl(word){
+  const url=new URL('https://en.wiktionary.org/w/api.php');
+  url.searchParams.set('action','parse');
+  url.searchParams.set('page','Thesaurus:'+word.replace(/s+/g,'_'));
+  url.searchParams.set('prop','text');
+  url.searchParams.set('format','json');
+  url.searchParams.set('formatversion','2');
+  url.searchParams.set('origin','*');
+  return url.toString();
+}
+function wiktionaryThesaurusPageLink(word){
+  return 'https://en.wiktionary.org/wiki/'+encodeURIComponent('Thesaurus:'+word.replace(/s+/g,'_'));
+}
 function thesaurusUrl(category,word){
+  if(category==='historical')return wiktionaryThesaurusUrl(word);
   const url=new URL('https://api.datamuse.com/words');
   const spec=thesaurusCategories[category];
   if(category==='definitions'){
@@ -1266,7 +1365,7 @@ function thesaurusUrl(category,word){
     url.searchParams.set('max','1');
   }else{
     url.searchParams.set(spec.parameter,word);
-    url.searchParams.set('max','12');
+    url.searchParams.set('max',category==='synonyms'?'1000':'100');
   }
   return url.toString();
 }
@@ -1289,7 +1388,8 @@ async function loadThesaurusCategory(category){
       referrerPolicy:'no-referrer',signal:controller.signal
     });
     if(!response.ok)throw new Error('lookup failed');
-    const data=await response.json();
+    const payload=await response.json();
+    const data=category==='historical'?parseHistoricalThesaurus(payload):payload;
     if(!Array.isArray(data))throw new Error('unexpected response');
     thesaurusCache.set(cacheKey,data);
     renderThesaurusResults(category,data,requestToken);
@@ -1307,6 +1407,7 @@ async function loadThesaurusCategory(category){
 function selectThesaurusCategory(category){
   if(!thesaurusCategories[category]||!synonymTargetIsValid())return;
   activeThesaurusCategory=category;
+  thesaurusDisplayLimit=thesaurusPageSize;
   setThesaurusTabs();
   loadThesaurusCategory(category);
 }
@@ -1317,6 +1418,9 @@ function openSynonymLookup(range,word){
   activeThesaurusCategory='synonyms';
   setThesaurusTabs();
   $('synonymWordHeading').textContent='“'+word+'”';
+  const sourceLink=$('thesaurusWiktionarySource');
+  if(sourceLink)sourceLink.href=wiktionaryThesaurusPageLink(word);
+  thesaurusDisplayLimit=thesaurusPageSize;
   $('synonymStatus').textContent='Loading synonyms…';
   $('synonymSuggestions').replaceChildren();
   synonymPopover.hidden=false;
