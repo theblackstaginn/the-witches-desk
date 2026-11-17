@@ -10,7 +10,7 @@ A private, manuscript-first writing and story-development workspace built for lo
 - Scene title, word count, manuscript word count, and POV assignment
 - Undo/redo, bold, italic, underline, strikethrough, lists, headings, blockquotes, and alignment
 - Scene-level find and replace
-- Word-level synonym lookup from the selected word, with no manuscript text sent to the lookup service
+- Word-level thesaurus with definitions, up to 1,000 ranked synonym results (shown in batches), antonyms, related words, and a Wiktionary historical-synonym section
 - Keyboard save shortcut
 - Chapter and scene reordering
 - Rename/delete controls with destructive-action confirmation
@@ -50,7 +50,7 @@ All Witch's Desk tables use RLS and owner-scoped policies for authenticated user
 Do not place secret keys, service-role keys, database passwords, or private credentials in frontend files.
 
 ### Synonym lookup data flow
-The synonym picker sends only the selected word to the Datamuse API (`rel_syn`); it does not send a sentence, scene, manuscript, user ID, or Supabase data. Datamuse's documentation says its temporary query logs are discarded at the end of each day. It also says API keys will be required starting February 1, 2027. Before that date, move the lookup behind a secret-backed endpoint if the feature is to remain available; never put an API key in this browser app.
+The thesaurus sends only the selected word to Datamuse for standard lookup, or to the Wiktionary API for the Historical section. It does not send a sentence, surrounding text, scene, manuscript, user ID, or Supabase data. Historical synonym entries are shown with Wiktionary labels when available, including Middle English, archaic, obsolete, dated, and explicitly stated Victorian/19th-century labels. The app does not infer an era when the source does not state one. Wiktionary entries are linked and attributed under the CC BY-SA 4.0 license. Datamuse says its temporary query logs are discarded at the end of the day. API keys will be required starting February 1, 2027; before then, move Datamuse requests behind a secret-backed endpoint if the feature is to remain available. Never put an API key in this browser app.
 
 ## Deliberate v1 boundaries
 The application is now a complete practical writing environment, but it is not a literal Microsoft Word clone. The editor remains browser-native `contenteditable` rather than a structured editor engine such as Tiptap/ProseMirror. DOCX and EPUB are not generated natively; PDF is provided through the browser's print/PDF pipeline. These are appropriate future upgrades if Jess eventually needs publisher-facing interchange formats beyond the current HTML/TXT/PDF/JSON workflow.
