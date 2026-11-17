@@ -259,10 +259,11 @@
       <button id="thesaurusTab-definitions" type="button" role="tab" data-thesaurus-category="definitions" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Definitions</button>
       <button id="thesaurusTab-antonyms" type="button" role="tab" data-thesaurus-category="antonyms" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Antonyms</button>
       <button id="thesaurusTab-related" type="button" role="tab" data-thesaurus-category="related" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Related</button>
+      <button id="thesaurusTab-historical" type="button" role="tab" data-thesaurus-category="historical" aria-selected="false" aria-controls="synonymSuggestions" tabindex="-1">Historical</button>
     </nav>
     <p id="synonymStatus" class="synonymStatus" role="status" aria-live="polite">Select a word to begin.</p>
     <div id="synonymSuggestions" class="synonymSuggestions" role="tabpanel" aria-labelledby="thesaurusTab-synonyms" tabindex="0"></div>
-    <p class="synonymPrivacy">Only the selected word is sent to Datamuse for the chosen section. No sentence, scene, manuscript, user ID, or Supabase data is sent. Datamuse says temporary query logs are discarded daily.</p>
+    <p class="synonymPrivacy">Only the selected word is sent to Datamuse for standard lookup or Wiktionary for Historical. No sentence, scene, manuscript, user ID, or Supabase data is sent. Historical labels come from the source; it will not guess an exact era. <a id="thesaurusWiktionarySource" href="https://en.wiktionary.org/wiki/Wiktionary:Thesaurus" target="_blank" rel="noopener noreferrer">Wiktionary source (CC BY-SA)</a>.</p>
   </section>
 
   <dialog id="worldOverviewDialog" aria-labelledby="worldOverviewHeading">
@@ -439,6 +440,6 @@
   maybeShow();
 })();
 </script>
-<script type="module" src="./app.js?v=wd-extended-thesaurus-20261117"></script>
+<script type="module" src="./app.js?v=wd-historical-thesaurus-20261117"></script>
 </body>
 </html>
