@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Authorize access · The Witch’s Desk</title>
+  <style>
+    :root{color-scheme:dark;--ink:#f7f1ff;--muted:#d0c1df;--panel:#34254f;--line:#bba3dd;--accent:#ead09b;--danger:#f3a5af;--bg:#171020}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:24px;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 0,#443264 0,#21182f 55%,var(--bg) 100%);color:var(--ink);font:16px/1.55 Georgia,serif}
+    main{width:min(100%,560px);padding:clamp(22px,5vw,40px);border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,rgba(72,54,106,.97),rgba(35,25,54,.98));box-shadow:0 22px 70px #08050e99}
+    .crest{color:var(--accent);font-size:1.15rem;letter-spacing:.2em;text-align:center}.eyebrow{text-align:center;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;font-size:.8rem;margin:.65rem 0}
+    h1{text-align:center;font-size:clamp(1.55rem,5vw,2rem);margin:.1rem 0 1rem}p{margin:.7rem 0;color:var(--muted)}
+    .card{margin:1.2rem 0;padding:1rem 1.1rem;border:1px solid #ffffff2b;border-radius:14px;background:#150f24a8}.card strong{color:var(--ink)}.details{overflow-wrap:anywhere;font-size:.94rem}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:1.25rem}.actions button{flex:1 1 170px;min-height:48px;border-radius:12px;border:1px solid var(--line);padding:10px 16px;background:#59447d;color:var(--ink);font:700 1rem Georgia,serif;cursor:pointer}.actions button.primary{background:var(--accent);border-color:var(--accent);color:#2c203a}.actions button:disabled{opacity:.6;cursor:wait}
+    label{display:block;margin:14px 0 5px;color:var(--muted)}input{width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid #bba3dd88;background:#170f25;color:var(--ink);font:inherit}button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+    #message{min-height:1.5em;color:var(--danger)}[hidden]{display:none!important}.fineprint{font-size:.88rem}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="crest" aria-hidden="true">☾ ✦ ☽</div>
+    <p class="eyebrow">The Witch’s Desk</p>
+    <h1>Connect a read-only writing companion</h1>
+    <section id="loading" aria-live="polite"><p>Checking the authorization request…</p></section>
+    <section id="login" hidden>
+      <p>Sign in to the Desk account that owns the writing you want ChatGPT to read. Your password is sent directly to Supabase Auth over HTTPS and is never sent to ChatGPT.</p>
+      <form id="loginForm">
+        <label for="email">Desk account email</label><input id="email" type="email" autocomplete="username" required>
+        <label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required>
+        <div class="actions"><button class="primary" type="submit">Sign in</button></div>
+      </form>
+    </section>
+    <section id="consent" hidden>
+      <p id="signedInAs"></p>
+      <div class="card details">
+        <p><strong>Requesting app:</strong> <span id="clientName"></span></p>
+        <p><strong>Redirect address:</strong> <span id="redirectUri"></span></p>
+        <p><strong>Requested OAuth scopes:</strong> <span id="scopes"></span></p>
+      </div>
+      <div class="card">
+        <strong>What this connection can read</strong>
+        <p>Manuscript titles, chapter and scene outlines, selected scene text, notes, characters, and worldbuilding in this Supabase account. The ChatGPT tools expose read operations only. They cannot save, edit, restore, or delete Desk data.</p>
+        <p class="fineprint">Text you ask ChatGPT to read will be included in its response context. The connector queries the Desk directly and does not send writing to a dictionary or search service.</p>
+      </div>
+      <div class="actions">
+        <button id="deny" type="button">Deny</button>
+        <button id="approve" class="primary" type="button">Approve read-only access</button>
+      </div>
+      <p class="fineprint">If the email above is not Jess’s Desk account, deny this request and sign out through the Desk app before reconnecting.</p>
+    </section>
+    <p id="message" role="alert" aria-live="polite"></p>
+  </main>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const PROJECT_URL = 'https://pqifpislzljilqatmtly.supabase.co';
+    const DEFAULT_KEY = 'sb_publishable_16wAhIyuMsClbOYoAZt6aQ_unXWTJ_n';
+    const configKey = 'witches-desk-config-v1';
+    const query = new URLSearchParams(location.search);
+    const authorizationId = query.get('authorization_id');
+    const el = id => document.getElementById(id);
+    const config = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(configKey) || 'null');
+        if (saved?.url === PROJECT_URL && saved?.key) return saved;
+      } catch {}
+      return { url: PROJECT_URL, key: DEFAULT_KEY };
+    })();
+    const supabase = createClient(config.url, config.key, { auth: { persistSession: true, autoRefreshToken: true } });
+    let busy = false;
+
+    function show(id) {
+      for (const section of ['loading', 'login', 'consent']) el(section).hidden = section !== id;
+    }
+    function message(text) { el('message').textContent = text || ''; }
+    function text(id, value) { el(id).textContent = value || 'Not provided'; }
+    function setBusy(value) {
+      busy = value;
+      for (const button of document.querySelectorAll('button')) button.disabled = value;
+    }
+
+    async function loadAuthorization() {
+      if (!authorizationId) throw new Error('This authorization link is missing its request ID. Return to ChatGPT and reconnect.');
+      const { data: userResult, error: userError } = await supabase.auth.getUser();
+      if (userError && userError.message !== 'Auth session missing!') throw userError;
+      if (!userResult?.user) { show('login'); return; }
+
+      const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(authorizationId);
+      if (error || !data) throw error || new Error('Supabase did not return authorization details.');
+      if (!('authorization_id' in data)) {
+        location.assign(data.redirect_url);
+        return;
+      }
+
+      text('signedInAs', `Signed in to the Desk as ${userResult.user.email || 'the current account'}.`);
+      text('clientName', data.client?.name);
+      text('redirectUri', data.redirect_uri);
+      text('scopes', data.scope?.trim() || 'No additional profile scopes requested');
+      show('consent');
+    }
+
+    el('loginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      if (busy) return;
+      setBusy(true); message('Signing in…');
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email: el('email').value.trim(), password: el('password').value });
+        if (error) throw error;
+        message(''); await loadAuthorization();
+      } catch (error) { message(error?.message || 'Sign-in failed.'); }
+      finally { setBusy(false); }
+    });
+
+    async function decide(method) {
+      if (busy) return;
+      setBusy(true); message(method === 'approveAuthorization' ? 'Approving…' : 'Denying…');
+      try {
+        const { data, error } = await supabase.auth.oauth[method](authorizationId);
+        if (error) throw error;
+        if (!data?.redirect_url) throw new Error('Supabase did not return a redirect address.');
+        location.assign(data.redirect_url);
+      } catch (error) { message(error?.message || 'The authorization decision failed.'); setBusy(false); }
+    }
+
+    el('approve').addEventListener('click', () => decide('approveAuthorization'));
+    el('deny').addEventListener('click', () => decide('denyAuthorization'));
+    loadAuthorization().catch(error => { show('loading'); message(error?.message || 'Could not load this authorization request.'); });
+  </script>
+</body>
+</html>
