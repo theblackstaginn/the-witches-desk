@@ -1,15 +1,15 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "witches-desk-reader",
-  "version": "0.1.0",
-  "description": "A private, read-only ChatGPT connection to The Witch’s Desk writing workspace.",
+  "version": "0.2.0",
+  "description": "A read-only ChatGPT connection to The Witch’s Desk writing workspace.",
   "author": { "name": "Black Stag" },
   "extensions": {
     "com.openai": {
       "interface": {
         "displayName": "Witch’s Desk Reader",
         "shortDescription": "Read Jess’s Desk with ChatGPT",
-        "longDescription": "Read-only access to the signed-in Witch’s Desk user’s manuscripts, selected scenes, notes, characters, and worldbuilding. This plugin has no save, edit, restore, or delete tools.",
+        "longDescription": "Read-only access to the signed-in Witch’s Desk account’s manuscripts, chapters, selected scenes, notes, characters, and worldbuilding. Start a temporary 30-minute connection from The Witch’s Desk. This plugin has no save, edit, restore, or delete tools.",
         "developerName": "Black Stag",
         "category": "Productivity",
         "capabilities": [],
