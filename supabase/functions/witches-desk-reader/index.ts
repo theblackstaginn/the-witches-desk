@@ -8,7 +8,13 @@ const RESOURCE_METADATA_URL = `${FUNCTION_URL}/.well-known/oauth-protected-resou
 const SCHEMA = "witches_desk";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const legacyToolDefinitions = [
+type ToolDefinition = {
+  name: string;
+  description: string;
+  inputSchema: { type: "object"; properties: Record<string, unknown>; required?: string[]; additionalProperties?: boolean };
+};
+
+const legacyToolDefinitions: ToolDefinition[] = [
   {
     name: "list_manuscripts",
     description: "Read the authenticated Desk user's manuscript titles and brief metadata. Does not return manuscript text.",
