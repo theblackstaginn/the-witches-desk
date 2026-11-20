@@ -598,38 +598,78 @@ async function exportData(kind){
 }
 $('printManuscript').onclick=async()=>{
   if(!book){toast('Create a manuscript first');return}
-  // Open synchronously from the tap. iOS standalone web apps have no browser Back button.
+  // Open synchronously from the tap so iOS allows a separate print preview.
   const w=window.open('','_blank');
   if(!w){toast('Allow pop-ups to print or save the manuscript as PDF');return}
-  w.document.write('<!doctype html><title>Preparing manuscript…</title><p>Preparing your manuscript…</p>');
+  w.document.write('<!doctype html><title>Preparing archival copy...</title><p>Preparing your archival copy...</p>');
   try{
     await saveNow();
     const structure=await allBookScenes();
-    let body='<h1>'+safeText(book.title)+'</h1>';
-    for(const c of structure){body+='<h2>'+safeText(c.title)+'</h2>';for(const sceneRow of c.scenes)body+='<section><h3>'+safeText(sceneRow.title)+'</h3>'+normalizeDoc(sceneRow.content)+'</section>'}
+    const archiveDate=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    const archiveTitle=book.title||'Untitled Manuscript';
+    // Only the framing and typography are added. Scene contents remain unchanged.
+    let body='<section class="archiveCover" aria-label="Archival title page">'+
+      '<p class="archiveKicker">THE WITCH\'S DESK</p>'+
+      '<h1>'+safeText(archiveTitle)+'</h1>'+
+      '<div class="archiveRule" aria-hidden="true"></div>'+
+      '<p class="archiveEdition">ARCHIVAL MANUSCRIPT COPY</p>'+
+      '<p class="archiveDate">Prepared '+safeText(archiveDate)+'</p>'+
+      '</section>';
+    for(const c of structure){
+      body+='<section class="archiveChapter"><header class="archiveChapterHead"><h2>'+safeText(c.title||'Untitled Chapter')+'</h2></header>';
+      for(const sceneRow of c.scenes){
+        const sceneHeading=String(sceneRow.title||'').trim();
+        body+='<section class="archiveScene">'+
+          (sceneHeading?'<h3 class="archiveSceneTitle">'+safeText(sceneHeading)+'</h3>':'')+
+          '<div class="archiveProse">'+normalizeDoc(sceneRow.content)+'</div></section>';
+      }
+      body+='</section>';
+    }
     const returnUrl=location.href.split('#')[0];
     const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
     const previewCss=[
-      '@page{margin:1in}',
-      'body{margin:0;background:#fff;color:#111;font:12pt/1.65 Georgia,serif}',
-      'h1{text-align:center;margin:30vh 0 1in}h2{page-break-before:always}h3{margin-top:2em}p{orphans:3;widows:3}',
+      '@page{size:letter;margin:.85in .92in .9in}',
+      '@page{@bottom-center{content:counter(page);font:9pt Georgia,serif;color:#666}}',
+      '@page:first{@bottom-center{content:none}}',
+      '*{box-sizing:border-box}',
+      'html{color-scheme:light}',
+      'body{margin:0;background:#ece8e2;color:#191919;font:12pt/1.65 Georgia,"Times New Roman",serif}',
       '.printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#25162e;box-shadow:0 2px 10px #0003}',
-      '.printBar a,.printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#472753;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}',
+      '.printBar a,.printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#472753;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}',
       '.printBar button{background:#663673}',
       '.previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
-      '.paper{max-width:760px;margin:auto;padding:24px}',
-      '@media screen{.paper h1{margin:2rem 0 1.5rem}}',
-      '@media screen and (max-width:650px){.paper{padding:16px;font-size:16px}}',
-      '@media print{.printBar,.previewHelp{display:none!important}.paper{max-width:none;padding:0}h1{margin:30vh 0 1in}}'
+      '.archiveSheet{width:min(8.5in,calc(100% - 28px));margin:24px auto;padding:.85in .92in;background:white;box-shadow:0 4px 24px #0002}',
+      '.archiveCover{min-height:8.7in;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;break-after:page;page-break-after:always}',
+      '.archiveKicker{font:600 9pt/1.4 Georgia,serif;letter-spacing:.2em;color:#555;margin:0 0 38pt}',
+      '.archiveCover h1{font:normal 29pt/1.25 Georgia,"Times New Roman",serif;letter-spacing:.015em;overflow-wrap:anywhere;margin:0;max-width:100%}',
+      '.archiveRule{width:2in;border-top:1px solid #777;margin:36pt auto 28pt}',
+      '.archiveEdition{font:600 10pt/1.5 Georgia,serif;letter-spacing:.12em;margin:0 0 12pt;color:#444}',
+      '.archiveDate{font:10pt/1.5 Georgia,serif;color:#555;margin:0}',
+      '.archiveChapter+.archiveChapter{break-before:page;page-break-before:always}',
+      '.archiveChapterHead{text-align:center;margin:0 0 32pt}',
+      '.archiveChapterHead h2{font:normal 19pt/1.3 Georgia,"Times New Roman",serif;margin:0;break-after:avoid;page-break-after:avoid;overflow-wrap:anywhere}',
+      '.archiveScene{break-inside:auto;page-break-inside:auto}',
+      '.archiveScene+.archiveScene:before{content:"";display:block;width:45pt;border-top:1px solid #888;margin:18pt auto}',
+      '.archiveSceneTitle{font:600 10.5pt/1.4 Georgia,serif;letter-spacing:.05em;color:#444;margin:0 0 18pt;break-after:avoid;page-break-after:avoid}',
+      '.archiveProse{overflow-wrap:break-word;hyphens:auto;text-align:left}',
+      '.archiveProse p,.archiveProse>div{margin:0 0 .8em;orphans:3;widows:3}',
+      '.archiveProse p:empty{min-height:.5em}',
+      '.archiveProse h1,.archiveProse h2,.archiveProse h3{break-after:avoid;page-break-after:avoid}',
+      '.archiveProse img{max-width:100%;height:auto;break-inside:avoid;page-break-inside:avoid}',
+      '.archiveProse blockquote{margin:1em 0 1em 1.5em;padding-left:12pt;border-left:1px solid #aaa}',
+      '.archiveProse pre{white-space:pre-wrap;overflow-wrap:anywhere}',
+      '.archiveProse table{width:100%;max-width:100%;border-collapse:collapse}',
+      '.archiveProse th,.archiveProse td{border:1px solid #999;padding:5pt;vertical-align:top}',
+      '@media screen and (max-width:650px){.archiveSheet{padding:24px 18px}.archiveCover{min-height:70vh}.archiveCover h1{font-size:23pt}.archiveChapterHead{margin:20pt 0 24pt}}',
+      '@media print{html,body{background:white!important;color:#111!important}.printBar,.previewHelp{display:none!important}.archiveSheet{width:auto;margin:0;padding:0;box-shadow:none}.archiveCover{min-height:8.85in}.archiveChapterHead{margin-top:12pt}}'
     ].join('');
     w.document.open();
-    w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safeText(book.title)+' - Print Preview</title><style>'+previewCss+'</style></head><body>'+
+    w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safeText(fileSafe(archiveTitle))+' - Archival Copy</title><style>'+previewCss+'</style></head><body>'+
       '<nav class="printBar" aria-label="Print preview controls"><a id="backToDesk" href="'+safeText(returnUrl)+'">← Back to Desk</a><button id="printPreviewButton" type="button">Print / Save PDF</button></nav>'+
-      '<p class="previewHelp">Your manuscript is saved. Use Print / Save PDF to open your device\'s print options, or Back to Desk to return to writing.</p>'+
-      '<main class="paper">'+body+'</main></body></html>');
+      '<p class="previewHelp">Your archival layout is ready. Print / Save PDF opens the device print options, or Back to Desk returns you to writing.</p>'+
+      '<main class="archiveSheet">'+body+'</main></body></html>');
     w.document.close();
     w.document.getElementById('backToDesk').addEventListener('click',event=>{
-      // Close a true pop-up and return to its original desk; otherwise the link navigates back.
       try{
         if(w.opener&&!w.opener.closed){
           event.preventDefault();
@@ -641,7 +681,7 @@ $('printManuscript').onclick=async()=>{
     });
     w.document.getElementById('printPreviewButton').addEventListener('click',()=>w.print());
     w.focus();
-    // Mobile Safari requires a direct tap to print; never strand PWA users in an empty new window.
+    // iOS requires a direct tap for print; desktop can open its print dialog automatically.
     if(!isIOS)setTimeout(()=>{if(!w.closed)w.print()},350);
     if($('exportDialog').open)$('exportDialog').close();
   }catch(e){w.close();handleError(e)}
