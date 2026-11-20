@@ -3,15 +3,7 @@
   "mcpServers": {
     "witches-desk-reader": {
       "type": "streamable-http",
-      "url": "https://pqifpislzljilqatmtly.supabase.co/functions/v1/witches-desk-reader",
-      "extensions": {
-        "com.openai": {
-          "auth": {
-            "type": "oauth",
-            "client": { "mode": "dcr" }
-          }
-        }
-      }
+      "url": "https://pqifpislzljilqatmtly.supabase.co/functions/v1/witches-desk-reader"
     }
   }
 }
