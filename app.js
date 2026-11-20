@@ -598,7 +598,7 @@ async function exportData(kind){
 }
 $('printManuscript').onclick=async()=>{
   if(!book){toast('Create a manuscript first');return}
-  // Open the print window immediately from the click, before asynchronous database reads.
+  // Open synchronously from the tap. iOS standalone web apps have no browser Back button.
   const w=window.open('','_blank');
   if(!w){toast('Allow pop-ups to print or save the manuscript as PDF');return}
   w.document.write('<!doctype html><title>Preparing manuscript…</title><p>Preparing your manuscript…</p>');
@@ -607,9 +607,42 @@ $('printManuscript').onclick=async()=>{
     const structure=await allBookScenes();
     let body='<h1>'+safeText(book.title)+'</h1>';
     for(const c of structure){body+='<h2>'+safeText(c.title)+'</h2>';for(const sceneRow of c.scenes)body+='<section><h3>'+safeText(sceneRow.title)+'</h3>'+normalizeDoc(sceneRow.content)+'</section>'}
+    const returnUrl=location.href.split('#')[0];
+    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    const previewCss=[
+      '@page{margin:1in}',
+      'body{margin:0;background:#fff;color:#111;font:12pt/1.65 Georgia,serif}',
+      'h1{text-align:center;margin:30vh 0 1in}h2{page-break-before:always}h3{margin-top:2em}p{orphans:3;widows:3}',
+      '.printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#25162e;box-shadow:0 2px 10px #0003}',
+      '.printBar a,.printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#472753;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}',
+      '.printBar button{background:#663673}',
+      '.previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
+      '.paper{max-width:760px;margin:auto;padding:24px}',
+      '@media screen{.paper h1{margin:2rem 0 1.5rem}}',
+      '@media screen and (max-width:650px){.paper{padding:16px;font-size:16px}}',
+      '@media print{.printBar,.previewHelp{display:none!important}.paper{max-width:none;padding:0}h1{margin:30vh 0 1in}}'
+    ].join('');
     w.document.open();
-    w.document.write('<!doctype html><title>'+safeText(book.title)+'</title><style>@page{margin:1in}body{font:12pt/1.65 Georgia,serif;color:#111}h1{text-align:center;margin:30vh 0 1in}h2{page-break-before:always}h3{margin-top:2em}p{orphans:3;widows:3}</style>'+body);
-    w.document.close();w.focus();setTimeout(()=>w.print(),350);
+    w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safeText(book.title)+' - Print Preview</title><style>'+previewCss+'</style></head><body>'+
+      '<nav class="printBar" aria-label="Print preview controls"><a id="backToDesk" href="'+safeText(returnUrl)+'">← Back to Desk</a><button id="printPreviewButton" type="button">Print / Save PDF</button></nav>'+
+      '<p class="previewHelp">Your manuscript is saved. Use Print / Save PDF to open your device\'s print options, or Back to Desk to return to writing.</p>'+
+      '<main class="paper">'+body+'</main></body></html>');
+    w.document.close();
+    w.document.getElementById('backToDesk').addEventListener('click',event=>{
+      // Close a true pop-up and return to its original desk; otherwise the link navigates back.
+      try{
+        if(w.opener&&!w.opener.closed){
+          event.preventDefault();
+          w.opener.focus();
+          w.close();
+          if(!w.closed)w.location.assign(returnUrl);
+        }
+      }catch(e){event.preventDefault();w.location.assign(returnUrl)}
+    });
+    w.document.getElementById('printPreviewButton').addEventListener('click',()=>w.print());
+    w.focus();
+    // Mobile Safari requires a direct tap to print; never strand PWA users in an empty new window.
+    if(!isIOS)setTimeout(()=>{if(!w.closed)w.print()},350);
     if($('exportDialog').open)$('exportDialog').close();
   }catch(e){w.close();handleError(e)}
 };
