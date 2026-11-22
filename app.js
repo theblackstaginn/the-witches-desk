@@ -657,6 +657,7 @@ $('printManuscript').onclick=async()=>{
       '.archiveProse font[size="3"]{font-size:14pt!important}',
       '.archiveProse font[size="4"]{font-size:16pt!important}',
       '.archiveProse font[size="5"],.archiveProse font[size="6"],.archiveProse font[size="7"]{font-size:18pt!important}',
+      '.archiveProse span[style*="font-size"]{font-size:12pt!important}',
       '.archiveProse p,.archiveProse>div{margin:0 0 .8em;orphans:3;widows:3}',
       '.archiveProse p:empty{min-height:.5em}',
       '.archiveProse h1,.archiveProse h2,.archiveProse h3{break-after:avoid;page-break-after:avoid}',
