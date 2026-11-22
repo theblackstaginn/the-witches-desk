@@ -632,7 +632,7 @@ $('printManuscript').onclick=async()=>{
       '@page{@bottom-center{content:counter(page);font:9pt Georgia,serif;color:#666}}',
       '@page:first{@bottom-center{content:none}}',
       '*{box-sizing:border-box}',
-      'html{color-scheme:light}',
+      'html{color-scheme:light;-webkit-text-size-adjust:100%}',
       'body{margin:0;background:#ece8e2;color:#191919;font:12pt/1.65 Georgia,"Times New Roman",serif}',
       '.printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#25162e;box-shadow:0 2px 10px #0003}',
       '.printBar a,.printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#472753;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}',
@@ -651,7 +651,12 @@ $('printManuscript').onclick=async()=>{
       '.archiveScene{break-inside:auto;page-break-inside:auto}',
       '.archiveScene+.archiveScene:before{content:"";display:block;width:45pt;border-top:1px solid #888;margin:18pt auto}',
       '.archiveSceneTitle{font:600 10.5pt/1.4 Georgia,serif;letter-spacing:.05em;color:#444;margin:0 0 18pt;break-after:avoid;page-break-after:avoid}',
-      '.archiveProse{overflow-wrap:break-word;hyphens:auto;text-align:left}',
+      '.archiveProse{font:12pt/1.65 Georgia,"Times New Roman",serif;font-weight:400;overflow-wrap:break-word;hyphens:auto;text-align:left}',
+      '.archiveProse font[size="1"]{font-size:10pt!important}',
+      '.archiveProse font[size="2"]{font-size:12pt!important}',
+      '.archiveProse font[size="3"]{font-size:14pt!important}',
+      '.archiveProse font[size="4"]{font-size:16pt!important}',
+      '.archiveProse font[size="5"],.archiveProse font[size="6"],.archiveProse font[size="7"]{font-size:18pt!important}',
       '.archiveProse p,.archiveProse>div{margin:0 0 .8em;orphans:3;widows:3}',
       '.archiveProse p:empty{min-height:.5em}',
       '.archiveProse h1,.archiveProse h2,.archiveProse h3{break-after:avoid;page-break-after:avoid}',
@@ -962,8 +967,61 @@ formatSelect?.addEventListener('change',()=>editorBlock(formatSelect.value));
 fontSelect?.addEventListener('change',()=>editorCommand('fontName',fontSelect.value));
 sizeSelect?.addEventListener('change',()=>{
   const sizes={'12':'2','14':'3','16':'4','18':'5'};
-  editorCommand('fontSize',sizes[sizeSelect.value]||'3');
+  editorCommand('fontSize',sizes[sizeSelect.value]||'2');
 });
+
+const mixedFontOption=new Option('Mixed','__mixed__');
+mixedFontOption.hidden=true;fontSelect?.add(mixedFontOption);
+const mixedSizeOption=new Option('Mixed','__mixed__');
+mixedSizeOption.hidden=true;sizeSelect?.add(mixedSizeOption);
+function syncFormattingControls(){
+  const editor=$('editor'),selection=window.getSelection();
+  if(!editor||!selection?.rangeCount||!selection.anchorNode||!editor.contains(selection.anchorNode))return;
+  const range=selection.getRangeAt(0),elements=[];
+  const elementFor=node=>node?.nodeType===Node.ELEMENT_NODE?node:node?.parentElement;
+  if(selection.isCollapsed){
+    const element=elementFor(selection.anchorNode);
+    if(element)elements.push(element);
+  }else{
+    const walker=document.createTreeWalker(editor,NodeFilter.SHOW_TEXT);
+    let node;
+    while((node=walker.nextNode())){
+      if(!node.nodeValue)continue;
+      try{if(range.intersectsNode(node)){const element=elementFor(node);if(element)elements.push(element)}}catch{}
+    }
+  }
+  if(!elements.length){const element=elementFor(selection.anchorNode);if(element)elements.push(element)}
+  const styles=elements.map(element=>getComputedStyle(element));
+  const sizes=[...new Set(styles.map(style=>(parseFloat(style.fontSize)*.75).toFixed(1)))];
+  if(sizeSelect){
+    if(sizes.length===1){
+      const points=Number(sizes[0]);
+      const options=[...sizeSelect.options].filter(option=>option.value&&option.value!=='__mixed__');
+      const nearest=options.reduce((best,option)=>{
+        const distance=Math.abs(Number(option.value)-points);
+        return !best||distance<best.distance?{option,distance}:best;
+      },null);
+      sizeSelect.value=nearest&&nearest.distance<=.8?nearest.option.value:'__mixed__';
+    }else sizeSelect.value='__mixed__';
+  }
+  const families=[...new Set(styles.map(style=>style.fontFamily.split(',')[0].replace(/["']/g,'').trim().toLowerCase()))];
+  if(fontSelect){
+    if(families.length===1){
+      const match=[...fontSelect.options].find(option=>option.value!=='__mixed__'&&option.value.toLowerCase()===families[0]);
+      fontSelect.value=match?match.value:'__mixed__';
+    }else fontSelect.value='__mixed__';
+  }
+  for(const command of ['bold','italic','underline','strikeThrough']){
+    const button=document.querySelector('[data-cmd="'+command+'"]');
+    if(!button)continue;
+    const states=[...new Set(styles.map(style=>command==='bold'?Number(style.fontWeight)>=600:command==='italic'?style.fontStyle!=='normal':command==='underline'?style.textDecorationLine.includes('underline'):style.textDecorationLine.includes('line-through')))];
+    const state=states.length===1?(states[0]?'true':'false'):'mixed';
+    button.setAttribute('aria-pressed',state);
+    button.classList.toggle('is-active',state==='true');
+    button.classList.toggle('is-mixed',state==='mixed');
+  }
+}
+document.addEventListener('selectionchange',syncFormattingControls);
 const colorPicker=document.createElement('input');
 colorPicker.type='color';colorPicker.value='#2b2118';
 colorPicker.setAttribute('aria-label','Choose text color');
