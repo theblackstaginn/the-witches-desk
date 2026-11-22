@@ -729,13 +729,13 @@ function editorCommand(command,value=null){
   if(!scene){toast('Create a scene first');return}
   focusManuscript();
   document.execCommand(command,false,value);
-  changed();
+  changed();syncFormattingControls();
 }
 function editorBlock(tag){
   if(!scene){toast('Create a scene first');return}
   focusManuscript();
   document.execCommand('formatBlock',false,tag);
-  changed();
+  changed();syncFormattingControls();
 }
 function activateModule(name){
   document.querySelectorAll('[data-module]').forEach(node=>{
@@ -971,9 +971,9 @@ sizeSelect?.addEventListener('change',()=>{
 });
 
 const mixedFontOption=new Option('Mixed','__mixed__');
-mixedFontOption.hidden=true;fontSelect?.add(mixedFontOption);
+mixedFontOption.disabled=true;fontSelect?.add(mixedFontOption);
 const mixedSizeOption=new Option('Mixed','__mixed__');
-mixedSizeOption.hidden=true;sizeSelect?.add(mixedSizeOption);
+mixedSizeOption.disabled=true;sizeSelect?.add(mixedSizeOption);
 function syncFormattingControls(){
   const editor=$('editor'),selection=window.getSelection();
   if(!editor||!selection?.rangeCount||!selection.anchorNode||!editor.contains(selection.anchorNode))return;
