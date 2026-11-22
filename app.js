@@ -598,10 +598,6 @@ async function exportData(kind){
 }
 $('printManuscript').onclick=async()=>{
   if(!book){toast('Create a manuscript first');return}
-  // Open synchronously from the tap so iOS allows a separate print preview.
-  const w=window.open('','_blank');
-  if(!w){toast('Allow pop-ups to print or save the manuscript as PDF');return}
-  w.document.write('<!doctype html><title>Preparing archival copy...</title><p>Preparing your archival copy...</p>');
   try{
     await saveNow();
     const structure=await allBookScenes();
@@ -625,75 +621,73 @@ $('printManuscript').onclick=async()=>{
       }
       body+='</section>';
     }
-    const returnUrl=location.href.split('#')[0];
-    const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
     const previewCss=[
       '@page{size:letter;margin:.85in .92in .9in}',
       '@page{@bottom-center{content:counter(page);font:9pt Georgia,serif;color:#666}}',
       '@page:first{@bottom-center{content:none}}',
-      '*{box-sizing:border-box}',
-      'html{color-scheme:light;-webkit-text-size-adjust:100%}',
-      'body{margin:0;background:#ece8e2;color:#191919;font:12pt/1.65 Georgia,"Times New Roman",serif}',
-      '.printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;background:#25162e;box-shadow:0 2px 10px #0003}',
-      '.printBar a,.printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#472753;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer}',
-      '.printBar button{background:#663673}',
-      '.previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
-      '.archiveSheet{width:min(8.5in,calc(100% - 28px));margin:24px auto;padding:.85in .92in;background:white;box-shadow:0 4px 24px #0002}',
-      '.archiveCover{min-height:8.7in;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;break-after:page;page-break-after:always}',
-      '.archiveKicker{font:600 9pt/1.4 Georgia,serif;letter-spacing:.2em;color:#555;margin:0 0 38pt}',
-      '.archiveCover h1{font:normal 29pt/1.25 Georgia,"Times New Roman",serif;letter-spacing:.015em;overflow-wrap:anywhere;margin:0;max-width:100%}',
-      '.archiveRule{width:2in;border-top:1px solid #777;margin:36pt auto 28pt}',
-      '.archiveEdition{font:600 10pt/1.5 Georgia,serif;letter-spacing:.12em;margin:0 0 12pt;color:#444}',
-      '.archiveDate{font:10pt/1.5 Georgia,serif;color:#555;margin:0}',
-      '.archiveChapter+.archiveChapter{break-before:page;page-break-before:always}',
-      '.archiveChapterHead{text-align:center;margin:0 0 32pt}',
-      '.archiveChapterHead h2{font:normal 19pt/1.3 Georgia,"Times New Roman",serif;margin:0;break-after:avoid;page-break-after:avoid;overflow-wrap:anywhere}',
-      '.archiveScene{break-inside:auto;page-break-inside:auto}',
-      '.archiveScene+.archiveScene:before{content:"";display:block;width:45pt;border-top:1px solid #888;margin:18pt auto}',
-      '.archiveSceneTitle{font:600 10.5pt/1.4 Georgia,serif;letter-spacing:.05em;color:#444;margin:0 0 18pt;break-after:avoid;page-break-after:avoid}',
-      '.archiveProse{font:12pt/1.65 Georgia,"Times New Roman",serif;font-weight:400;overflow-wrap:break-word;hyphens:auto;text-align:left}',
-      '.archiveProse font[size="1"]{font-size:10pt!important}',
-      '.archiveProse font[size="2"]{font-size:12pt!important}',
-      '.archiveProse font[size="3"]{font-size:14pt!important}',
-      '.archiveProse font[size="4"]{font-size:16pt!important}',
-      '.archiveProse font[size="5"],.archiveProse font[size="6"],.archiveProse font[size="7"]{font-size:18pt!important}',
-      '.archiveProse span[style*="font-size"]{font-size:12pt!important}',
-      '.archiveProse p,.archiveProse>div{margin:0 0 .8em;orphans:3;widows:3}',
-      '.archiveProse p:empty{min-height:.5em}',
-      '.archiveProse h1,.archiveProse h2,.archiveProse h3{break-after:avoid;page-break-after:avoid}',
-      '.archiveProse img{max-width:100%;height:auto;break-inside:avoid;page-break-inside:avoid}',
-      '.archiveProse blockquote{margin:1em 0 1em 1.5em;padding-left:12pt;border-left:1px solid #aaa}',
-      '.archiveProse pre{white-space:pre-wrap;overflow-wrap:anywhere}',
-      '.archiveProse table{width:100%;max-width:100%;border-collapse:collapse}',
-      '.archiveProse th,.archiveProse td{border:1px solid #999;padding:5pt;vertical-align:top}',
-      '@media screen and (max-width:650px){.archiveSheet{padding:24px 18px}.archiveCover{min-height:70vh}.archiveCover h1{font-size:23pt}.archiveChapterHead{margin:20pt 0 24pt}}',
-      '@media print{html,body{background:white!important;color:#111!important}.printBar,.previewHelp{display:none!important}.archiveSheet{width:auto;margin:0;padding:0;box-shadow:none}.archiveCover{min-height:8.85in}.archiveChapterHead{margin-top:12pt}}'
+      '#archivalPreview,#archivalPreview *{box-sizing:border-box}',
+      '#archivalPreview{position:fixed;inset:0;z-index:2147483001;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#ece8e2;color:#191919;font:12pt/1.65 Georgia,"Times New Roman",serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}',
+      'body.archival-preview-open{overflow:hidden}',
+      '#archivalPreview .printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:#25162e;box-shadow:0 2px 10px #0003}',
+      '#archivalPreview .printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#663673;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer;touch-action:manipulation}',
+      '#archivalPreview .previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
+      '#archivalPreview .archiveSheet{width:min(8.5in,calc(100% - 28px));margin:24px auto;padding:.85in .92in;background:white;color:#191919;box-shadow:0 4px 24px #0002}',
+      '#archivalPreview .archiveCover{min-height:8.7in;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;break-after:page;page-break-after:always}',
+      '#archivalPreview .archiveKicker{font:600 9pt/1.4 Georgia,serif;letter-spacing:.2em;color:#555;margin:0 0 38pt}',
+      '#archivalPreview .archiveCover h1{font:normal 29pt/1.25 Georgia,"Times New Roman",serif;letter-spacing:.015em;overflow-wrap:anywhere;margin:0;max-width:100%}',
+      '#archivalPreview .archiveRule{width:2in;border-top:1px solid #777;margin:36pt auto 28pt}',
+      '#archivalPreview .archiveEdition{font:600 10pt/1.5 Georgia,serif;letter-spacing:.12em;margin:0 0 12pt;color:#444}',
+      '#archivalPreview .archiveDate{font:10pt/1.5 Georgia,serif;color:#555;margin:0}',
+      '#archivalPreview .archiveChapter+.archiveChapter{break-before:page;page-break-before:always}',
+      '#archivalPreview .archiveChapterHead{text-align:center;margin:0 0 32pt}',
+      '#archivalPreview .archiveChapterHead h2{font:normal 19pt/1.3 Georgia,"Times New Roman",serif;margin:0;break-after:avoid;page-break-after:avoid;overflow-wrap:anywhere}',
+      '#archivalPreview .archiveScene{break-inside:auto;page-break-inside:auto}',
+      '#archivalPreview .archiveScene+.archiveScene:before{content:"";display:block;width:45pt;border-top:1px solid #888;margin:18pt auto}',
+      '#archivalPreview .archiveSceneTitle{font:600 10.5pt/1.4 Georgia,serif;letter-spacing:.05em;color:#444;margin:0 0 18pt;break-after:avoid;page-break-after:avoid}',
+      '#archivalPreview .archiveProse{font:12pt/1.65 Georgia,"Times New Roman",serif;font-weight:400;overflow-wrap:break-word;hyphens:auto;text-align:left}',
+      '#archivalPreview .archiveProse font[size="1"]{font-size:10pt!important}',
+      '#archivalPreview .archiveProse font[size="2"]{font-size:12pt!important}',
+      '#archivalPreview .archiveProse font[size="3"]{font-size:14pt!important}',
+      '#archivalPreview .archiveProse font[size="4"]{font-size:16pt!important}',
+      '#archivalPreview .archiveProse font[size="5"],#archivalPreview .archiveProse font[size="6"],#archivalPreview .archiveProse font[size="7"]{font-size:18pt!important}',
+      '#archivalPreview .archiveProse span[style*="font-size"]{font-size:12pt!important}',
+      '#archivalPreview .archiveProse p,#archivalPreview .archiveProse>div{margin:0 0 .8em;orphans:3;widows:3}',
+      '#archivalPreview .archiveProse p:empty{min-height:.5em}',
+      '#archivalPreview .archiveProse h1,#archivalPreview .archiveProse h2,#archivalPreview .archiveProse h3{break-after:avoid;page-break-after:avoid}',
+      '#archivalPreview .archiveProse img{max-width:100%;height:auto;break-inside:avoid;page-break-inside:avoid}',
+      '#archivalPreview .archiveProse blockquote{margin:1em 0 1em 1.5em;padding-left:12pt;border-left:1px solid #aaa}',
+      '#archivalPreview .archiveProse pre{white-space:pre-wrap;overflow-wrap:anywhere}',
+      '#archivalPreview .archiveProse table{width:100%;max-width:100%;border-collapse:collapse}',
+      '#archivalPreview .archiveProse th,#archivalPreview .archiveProse td{border:1px solid #999;padding:5pt;vertical-align:top}',
+      '@media screen and (max-width:650px){#archivalPreview .printBar{gap:8px;padding-left:12px;padding-right:12px}#archivalPreview .printBar button{font-size:14px}#archivalPreview .archiveSheet{padding:24px 18px}#archivalPreview .archiveCover{min-height:70vh}#archivalPreview .archiveCover h1{font-size:23pt}#archivalPreview .archiveChapterHead{margin:20pt 0 24pt}}',
+      '@media print{html,body{background:white!important;color:#111!important}body.archival-preview-open{margin:0!important;overflow:visible!important}body.archival-preview-open>*:not(#archivalPreview){display:none!important}#archivalPreview{position:static!important;inset:auto!important;width:auto!important;height:auto!important;overflow:visible!important;z-index:auto!important;padding:0!important;background:white!important;color:#111!important}.printBar,.previewHelp{display:none!important}#archivalPreview .archiveSheet{width:auto;margin:0;padding:0;box-shadow:none}#archivalPreview .archiveCover{min-height:8.85in}#archivalPreview .archiveChapterHead{margin-top:12pt}}'
     ].join('');
-    w.document.open();
-    w.document.write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safeText(fileSafe(archiveTitle))+' - Archival Copy</title><style>'+previewCss+'</style></head><body>'+
-      '<nav class="printBar" aria-label="Print preview controls"><a id="backToDesk" href="'+safeText(returnUrl)+'">← Back to Desk</a><button id="printPreviewButton" type="button">Print / Save PDF</button></nav>'+
+    const originalTitle=document.title;
+    const originalScrollY=window.scrollY;
+    const style=document.createElement('style');
+    style.dataset.archivalPreview='true';
+    style.textContent=previewCss;
+    const preview=document.createElement('div');
+    preview.id='archivalPreview';
+    preview.innerHTML='<nav class="printBar" aria-label="Print preview controls"><button id="backToDesk" type="button">← Back to Desk</button><button id="printPreviewButton" type="button">Print / Save PDF</button></nav>'+
       '<p class="previewHelp">Your archival layout is ready. Print / Save PDF opens the device print options, or Back to Desk returns you to writing.</p>'+
-      '<main class="archiveSheet">'+body+'</main></body></html>');
-    w.document.close();
-    w.document.getElementById('backToDesk').addEventListener('click',event=>{
-      try{
-        if(w.opener&&!w.opener.closed){
-          event.preventDefault();
-          w.opener.focus();
-          w.close();
-          if(!w.closed)w.location.assign(returnUrl);
-        }
-      }catch(e){event.preventDefault();w.location.assign(returnUrl)}
-    });
-    w.document.getElementById('printPreviewButton').addEventListener('click',()=>w.print());
-    w.focus();
-    // iOS requires a direct tap for print; desktop can open its print dialog automatically.
-    if(!isIOS)setTimeout(()=>{if(!w.closed)w.print()},350);
+      '<main class="archiveSheet">'+body+'</main>';
     if($('exportDialog').open)$('exportDialog').close();
-  }catch(e){w.close();handleError(e)}
+    document.head.append(style);
+    document.body.classList.add('archival-preview-open');
+    document.body.append(preview);
+    document.title=fileSafe(archiveTitle)+' - Archival Copy';
+    preview.querySelector('#backToDesk').addEventListener('click',()=>{
+      preview.remove();
+      style.remove();
+      document.body.classList.remove('archival-preview-open');
+      document.title=originalTitle;
+      window.scrollTo(0,originalScrollY);
+    });
+    preview.querySelector('#printPreviewButton').addEventListener('click',()=>window.print());
+  }catch(e){handleError(e)}
 };
-
-document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
+  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 window.addEventListener('keydown',e=>{
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();saveNow().then(()=>toast('Saved')).catch(handleError)}
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='f'&&scene){e.preventDefault();$('findDialog').showModal();$('findText').focus()}
