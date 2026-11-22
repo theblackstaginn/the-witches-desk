@@ -127,6 +127,7 @@ main{height:calc(100vh - 76px);display:grid;grid-template-columns:320px minmax(6
 #editor font[size="3"]{font-size:14pt!important}
 #editor font[size="4"]{font-size:16pt!important}
 #editor font[size="5"],#editor font[size="6"],#editor font[size="7"]{font-size:18pt!important}
+#editor span[style*="font-size"]{font-size:12pt!important}
 #editor blockquote{border-left:3px solid #9a642b;margin-left:0;padding-left:20px;color:#5a3a26;font-style:italic}
 #editor p:first-child:first-letter{float:left;font-size:3.25em;line-height:.85;padding:.08em .12em 0 .05em;color:#6f2a66;font-family:Georgia,serif}
 .statusBar{display:flex;align-items:center;gap:0;background:#160b19;border-top:1px solid #a76e18;color:#eadbcf;font-size:12px;overflow:hidden}
