@@ -596,6 +596,119 @@ async function exportData(kind){
   }
   $('exportDialog').close();
 }
+let archivalPdfLoader=null;
+function loadArchivalPdfMake(){
+  if(window.pdfMake&&typeof window.pdfMake.createPdf==='function')return Promise.resolve(window.pdfMake);
+  if(!archivalPdfLoader){
+    const loadScript=src=>new Promise((resolve,reject)=>{
+      let script=Array.from(document.scripts).find(item=>item.dataset.archivePdfSrc===src);
+      if(script?.dataset.loaded==='true'){resolve();return}
+      if(!script){script=document.createElement('script');script.src=src;script.async=true;script.dataset.archivePdfSrc=src}
+      script.onload=()=>{script.dataset.loaded='true';resolve()};
+      script.onerror=()=>reject(new Error('The PDF library could not be loaded.'));
+      if(!script.isConnected)document.head.append(script);
+    });
+    archivalPdfLoader=(async()=>{
+      await loadScript('https://cdn.jsdelivr.net/npm/pdfmake@0.3.14/build/pdfmake.min.js');
+      await loadScript('https://cdn.jsdelivr.net/npm/pdfmake@0.3.14/build/vfs_fonts.js');
+      if(!window.pdfMake||typeof window.pdfMake.createPdf!=='function')throw new Error('The PDF generator did not start.');
+      return window.pdfMake;
+    })().catch(error=>{archivalPdfLoader=null;throw error});
+  }
+  return archivalPdfLoader;
+}
+function archivalPdfRuns(node,format={}){
+  if(node.nodeType===Node.TEXT_NODE)return node.nodeValue?[{text:node.nodeValue,...format}]:[];
+  if(node.nodeType!==Node.ELEMENT_NODE)return [];
+  const tag=node.tagName;
+  if(tag==='BR')return [{text:'\n',...format}];
+  if(tag==='IMG')return [{text:'[Image'+(node.getAttribute('alt')?': '+node.getAttribute('alt'):'')+']',italics:true,...format}];
+  const next={...format};
+  if(tag==='B'||tag==='STRONG')next.bold=true;
+  if(tag==='I'||tag==='EM')next.italics=true;
+  if(tag==='U')next.decoration='underline';
+  if(tag==='S'||tag==='STRIKE'||tag==='DEL')next.decoration='lineThrough';
+  if(tag==='SUP')next.sup=true;
+  if(tag==='SUB')next.sub=true;
+  if(tag==='A'){
+    const href=node.getAttribute('href');
+    if(href){next.link=href;next.color='#5a3b66';next.decoration='underline'}
+  }
+  return Array.from(node.childNodes).flatMap(child=>archivalPdfRuns(child,next));
+}
+function archivalPdfBlocks(html){
+  const root=document.createElement('div');
+  root.innerHTML=normalizeDoc(html);
+  const blocks=[];
+  const blockTags=new Set(['P','DIV','H1','H2','H3','H4','H5','H6','BLOCKQUOTE','PRE','UL','OL','LI','TABLE','HR']);
+  const add=(node,style='prose',prefix='')=>{
+    const runs=prefix?[{text:prefix},...Array.from(node.childNodes).flatMap(child=>archivalPdfRuns(child))]:Array.from(node.childNodes).flatMap(child=>archivalPdfRuns(child));
+    blocks.push({text:runs.length?runs:[{text:' '}],style,margin:style==='quote'?[18,5,18,10]:[0,0,0,9]});
+  };
+  const walk=container=>{
+    let pending=[];
+    const flush=()=>{
+      if(!pending.length)return;
+      const runs=pending.flatMap(node=>archivalPdfRuns(node));pending=[];
+      if(runs.map(run=>run.text||'').join('').trim())blocks.push({text:runs,style:'prose',margin:[0,0,0,9]});
+    };
+    for(const node of Array.from(container.childNodes)){
+      if(node.nodeType===Node.ELEMENT_NODE&&blockTags.has(node.tagName)){
+        flush();
+        const tag=node.tagName;
+        if(tag==='DIV'&&Array.from(node.children).some(child=>blockTags.has(child.tagName)))walk(node);
+        else if(tag==='UL'||tag==='OL')Array.from(node.children).filter(child=>child.tagName==='LI').forEach((item,index)=>add(item,'prose',tag==='OL'?(index+1)+'. ':'• '));
+        else if(tag==='TABLE')for(const row of Array.from(node.querySelectorAll('tr'))){const cells=Array.from(row.querySelectorAll('th,td')).map(cell=>cell.textContent||'');if(cells.length)blocks.push({text:cells.join('  |  '),style:'prose',margin:[0,0,0,8]})}
+        else if(tag==='HR')blocks.push({canvas:[{type:'line',x1:0,y1:0,x2:48,y2:0,lineWidth:.6,lineColor:'#888'}],alignment:'center',margin:[0,10,0,10]});
+        else if(tag==='BLOCKQUOTE')add(node,'quote');
+        else if(/^H[1-6]$/.test(tag))add(node,'manuscriptHeading');
+        else if(tag==='LI')add(node,'prose','• ');
+        else add(node);
+      }else pending.push(node);
+    }
+    flush();
+  };
+  walk(root);
+  return blocks;
+}
+async function archivalPdfDefinition(title,date,structure){
+  const content=[
+    {text:"THE WITCH'S DESK",style:'coverKicker',alignment:'center',margin:[0,190,0,38]},
+    {text:title||'Untitled Manuscript',style:'coverTitle',alignment:'center'},
+    {canvas:[{type:'line',x1:0,y1:0,x2:144,y2:0,lineWidth:.8,lineColor:'#777'}],alignment:'center',margin:[0,36,0,28]},
+    {text:'ARCHIVAL MANUSCRIPT COPY',style:'coverEdition',alignment:'center',margin:[0,0,0,14]},
+    {text:'Prepared '+date,style:'coverDate',alignment:'center',pageBreak:'after'}
+  ];
+  for(let chapterIndex=0;chapterIndex<structure.length;chapterIndex++){
+    const chapter=structure[chapterIndex];
+    const heading={text:chapter.title||'Untitled Chapter',style:'chapterHeading',alignment:'center',margin:[0,0,0,28],keepWithNext:true};
+    if(chapterIndex>0)heading.pageBreak='before';
+    content.push(heading);
+    for(const sceneRow of chapter.scenes||[]){
+      const sceneHeading=String(sceneRow.title||'').trim();
+      if(sceneHeading)content.push({text:sceneHeading,style:'sceneHeading',keepWithNext:true});
+      content.push(...archivalPdfBlocks(sceneRow.content));
+    }
+  }
+  return {
+    info:{title:title||'Untitled Manuscript',subject:'Archival manuscript copy',creator:"The Witch's Desk"},
+    pageSize:'LETTER',pageMargins:[66,68,66,62],content,
+    defaultStyle:{font:'Roboto',fontSize:12,lineHeight:1.5,color:'#191919'},
+    styles:{
+      coverKicker:{fontSize:9,bold:true,color:'#555',characterSpacing:2},
+      coverTitle:{fontSize:29,bold:false,color:'#111',lineHeight:1.2},
+      coverEdition:{fontSize:10,bold:true,color:'#444',characterSpacing:1.2},
+      coverDate:{fontSize:10,color:'#555'},
+      chapterHeading:{fontSize:19,bold:false,color:'#111'},
+      sceneHeading:{fontSize:10.5,bold:true,color:'#444',margin:[0,0,0,15]},
+      manuscriptHeading:{fontSize:13,bold:true,margin:[0,8,0,8]},
+      prose:{fontSize:12,lineHeight:1.5,alignment:'left',margin:[0,0,0,9]},
+      quote:{fontSize:12,lineHeight:1.5,italics:true,color:'#333',margin:[18,5,18,10]}
+    },
+    footer:(currentPage)=>currentPage===1?'':{text:String(currentPage-1),alignment:'center',fontSize:9,color:'#666'}
+  };
+}
+
 $('printManuscript').onclick=async()=>{
   if(!book){toast('Create a manuscript first');return}
   try{
@@ -630,6 +743,8 @@ $('printManuscript').onclick=async()=>{
       'body.archival-preview-open{overflow:hidden}',
       '#archivalPreview .printBar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:#25162e;box-shadow:0 2px 10px #0003}',
       '#archivalPreview .printBar button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#663673;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer;touch-action:manipulation}',
+      '#archivalPreview .printBar .pdfDownloadLink{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#663673;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer;touch-action:manipulation}',
+      '#archivalPreview .printBar #downloadPdfFallback[hidden]{display:none!important}',
       '#archivalPreview .previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
       '#archivalPreview .archiveSheet{width:min(8.5in,calc(100% - 28px));margin:24px auto;padding:.85in .92in;background:white;color:#191919;box-shadow:0 4px 24px #0002}',
       '#archivalPreview .archiveCover{min-height:8.7in;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;break-after:page;page-break-after:always}',
@@ -669,8 +784,8 @@ $('printManuscript').onclick=async()=>{
     style.textContent=previewCss;
     const preview=document.createElement('div');
     preview.id='archivalPreview';
-    preview.innerHTML='<nav class="printBar" aria-label="Print preview controls"><button id="backToDesk" type="button">← Back to Desk</button><button id="printPreviewButton" type="button">Print / Save PDF</button></nav>'+
-      '<p class="previewHelp">Your archival layout is ready. Print / Save PDF opens the device print options, or Back to Desk returns you to writing.</p>'+
+    preview.innerHTML='<nav class="printBar" aria-label="Print preview controls"><button id="backToDesk" type="button">← Back to Desk</button><button id="printPreviewButton" type="button">Create / Save PDF</button><a id="downloadPdfFallback" class="pdfDownloadLink" hidden>Save PDF</a></nav>'+
+      '<p class="previewHelp">Create / Save PDF builds the archival file on this device.</p>'+
       '<main class="archiveSheet">'+body+'</main>';
     if($('exportDialog').open)$('exportDialog').close();
     document.head.append(style);
@@ -684,7 +799,38 @@ $('printManuscript').onclick=async()=>{
       document.title=originalTitle;
       window.scrollTo(0,originalScrollY);
     });
-    preview.querySelector('#printPreviewButton').addEventListener('click',()=>window.print());
+    let pdfObjectUrl=null;
+    const pdfReady=loadArchivalPdfMake();
+    pdfReady.catch(()=>{});
+    preview.querySelector('#backToDesk').addEventListener('click',()=>{
+      if(pdfObjectUrl){URL.revokeObjectURL(pdfObjectUrl);pdfObjectUrl=null}
+    });
+    preview.querySelector('#printPreviewButton').addEventListener('click',async event=>{
+      const button=event.currentTarget;
+      const fallback=preview.querySelector('#downloadPdfFallback');
+      const help=preview.querySelector('.previewHelp');
+      button.disabled=true;
+      button.textContent='Preparing PDF…';
+      fallback.hidden=true;
+      help.textContent='Building your archival PDF on this device…';
+      try{
+        const pdfMake=await pdfReady;
+        const definition=await archivalPdfDefinition(archiveTitle,archiveDate,structure);
+        const blob=await pdfMake.createPdf(definition).getBlob();
+        if(pdfObjectUrl)URL.revokeObjectURL(pdfObjectUrl);
+        pdfObjectUrl=URL.createObjectURL(blob);
+        fallback.href=pdfObjectUrl;
+        fallback.download=fileSafe(archiveTitle)+' - Archival Copy.pdf';
+        fallback.hidden=false;
+        fallback.click();
+        help.textContent='Your PDF is ready. If it did not open or save, tap Save PDF.';
+        button.textContent='Create PDF Again';
+      }catch(error){
+        console.error(error);
+        help.textContent='The PDF could not be created: '+(error?.message||'Please try again.');
+        button.textContent='Try PDF Again';
+      }finally{button.disabled=false}
+    });
   }catch(e){handleError(e)}
 };
   document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
