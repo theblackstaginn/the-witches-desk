@@ -101,17 +101,6 @@ function db(table){return client.schema(schema).from(table)}
 async function query(p){const {data,error}=await p;if(error)throw error;return data}
 function handleError(e){console.error(e);status('Error');toast(e?.message||String(e))}
 function normalizeDoc(doc){return typeof doc==='string'?doc:(doc?.html||'')}
-function archivalPreviewDoc(doc){
-  const root=document.createElement('div');
-  root.innerHTML=normalizeDoc(doc);
-  root.querySelectorAll('style,script').forEach(node=>node.remove());
-  const layoutProperties=['position','inset','top','right','bottom','left','float','clear','transform','translate','width','min-width','max-width','height','min-height','max-height','margin','margin-left','margin-right','padding-left','padding-right','white-space','text-indent'];
-  root.querySelectorAll('*').forEach(node=>{
-    node.removeAttribute('class');node.removeAttribute('id');node.removeAttribute('width');node.removeAttribute('height');
-    layoutProperties.forEach(property=>node.style.removeProperty(property));
-  });
-  return root.innerHTML;
-}
 function plain(html){
   const d=document.createElement('div');d.innerHTML=html||'';return d.innerText.replace(/\n{3,}/g,'\n\n').trim();
 }
@@ -741,7 +730,7 @@ $('printManuscript').onclick=async()=>{
         const sceneHeading=String(sceneRow.title||'').trim();
         body+='<section class="archiveScene">'+
           (sceneHeading?'<h3 class="archiveSceneTitle">'+safeText(sceneHeading)+'</h3>':'')+
-          '<div class="archiveProse">'+archivalPreviewDoc(sceneRow.content)+'</div></section>';
+          '<div class="archiveProse">'+normalizeDoc(sceneRow.content)+'</div></section>';
       }
       body+='</section>';
     }
@@ -757,7 +746,7 @@ $('printManuscript').onclick=async()=>{
       '#archivalPreview .printBar .pdfDownloadLink{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border:1px solid #c29c64;border-radius:8px;padding:10px 14px;background:#663673;color:white;font:600 15px/1.2 system-ui,-apple-system,sans-serif;text-decoration:none;cursor:pointer;touch-action:manipulation}',
       '#archivalPreview .printBar #downloadPdfFallback[hidden]{display:none!important}',
       '#archivalPreview .previewHelp{margin:0;padding:10px 16px;background:#f4edf4;color:#44334b;font:13px/1.5 system-ui,-apple-system,sans-serif}',
-      '#archivalPreview .archiveSheet{width:calc(100vw - 32px);max-width:8.5in;min-width:0;margin:24px max(16px,calc((100vw - 8.5in)/2));padding:.85in .92in;background:white;color:#191919;box-shadow:0 4px 24px #0002}',
+      '#archivalPreview .archiveSheet{display:block;position:static;z-index:auto;height:auto;min-height:0;grid-template-columns:none;width:calc(100vw - 32px);max-width:8.5in;min-width:0;margin:24px max(16px,calc((100vw - 8.5in)/2));padding:.85in .92in;background:white;color:#191919;box-shadow:0 4px 24px #0002}',
       '#archivalPreview .archiveCover{min-height:8.7in;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;break-after:page;page-break-after:always}',
       '#archivalPreview .archiveKicker{font:600 9pt/1.4 Georgia,serif;letter-spacing:.2em;color:#555;margin:0 0 38pt}',
       '#archivalPreview .archiveCover h1{font:normal 29pt/1.25 Georgia,"Times New Roman",serif;letter-spacing:.015em;overflow-wrap:anywhere;margin:0;max-width:100%}',
