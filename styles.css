@@ -6,6 +6,31 @@
   --panel:rgba(18,8,23,.94);--panel2:rgba(34,12,40,.94);
   font-family:Georgia,"Times New Roman",serif;
 }
+
+/* Temporary read-only ChatGPT handoff */
+.askChatGPTButton{
+  flex:0 0 auto;
+  min-height:34px;
+  padding:6px 11px;
+  border:1px solid rgba(225,171,105,.72);
+  border-radius:8px;
+  background:linear-gradient(135deg,rgba(80,42,104,.92),rgba(48,25,69,.92));
+  color:#f7e8ed;
+  font:inherit;
+  font-size:13px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.askChatGPTButton:hover,.askChatGPTButton:focus-visible{
+  border-color:#f1c77f;
+  background:linear-gradient(135deg,rgba(105,56,133,.98),rgba(59,28,83,.98));
+  outline:none;
+}
+@media(max-width:760px){
+  #askChatGPT{display:none}
+  #mobileAskChatGPT{flex:0 0 auto}
+}
+@media(min-width:761px){#mobileAskChatGPT{display:none}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 html,body,#app{height:100%;margin:0}

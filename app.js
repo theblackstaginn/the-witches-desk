@@ -147,6 +147,58 @@ $('signup').onclick=async()=>{
 async function authResult(p){const {error}=await p;if(error)throw error}
 $('signout').onclick=()=>client.auth.signOut().catch(handleError);
 
+let startingDeskHandoff=false;
+async function askChatGPTToReadDesk(){
+  if(startingDeskHandoff)return;
+  if(!client||!user){toast('Sign in to The Witch’s Desk first.');return}
+  startingDeskHandoff=true;
+  const controls=[$('askChatGPT'),$('mobileAskChatGPT')].filter(Boolean);
+  controls.forEach(button=>button.disabled=true);
+  try{
+    const {data:{session},error:sessionError}=await client.auth.getSession();
+    if(sessionError)throw sessionError;
+    if(!session?.access_token)throw new Error('Your Desk session has expired. Sign in again to continue.');
+
+    const bytes=new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    const capability=Array.from(bytes,value=>value.toString(16).padStart(2,'0')).join('');
+    const requestId=crypto.randomUUID();
+    const {data,error}=await client.functions.invoke('witches-desk-reader',{
+      body:{action:'create_reader_grant',request_id:requestId,capability}
+    });
+    if(error)throw error;
+    if(!data?.expires_at)throw new Error('The temporary reader connection was not created.');
+
+    const prompt=[
+      'Use the read-only Witch’s Desk Reader to look up writing or story-planning material I ask about.',
+      'This temporary authorization is for the signed-in Witch’s Desk account and expires in 30 minutes.',
+      `request_id: ${requestId}`,
+      `capability: ${capability}`,
+      'Include request_id and capability in each reader tool call. Do not repeat or share the capability.',
+      'Start by listing the manuscripts. Retrieve only the chapters, scenes, characters, notes, or worldbuilding I request. Never attempt to edit or save Desk data.'
+    ].join('\n');
+
+    if(typeof navigator.share==='function'){
+      try{
+        await navigator.share({title:'Read The Witch’s Desk',text:prompt});
+        toast('Temporary read access shared. It expires in 30 minutes.');
+        return;
+      }catch(error){
+        if(error?.name==='AbortError')return;
+      }
+    }
+    try{
+      await navigator.clipboard.writeText(prompt);
+      toast('Reader prompt copied. Paste it into ChatGPT within 30 minutes.');
+    }catch{
+      window.prompt('Copy this temporary read-only prompt into ChatGPT:',prompt);
+    }
+  }catch(error){handleError(error)}
+  finally{startingDeskHandoff=false;controls.forEach(button=>button.disabled=false)}
+}
+$('askChatGPT')?.addEventListener('click',askChatGPTToReadDesk);
+$('mobileAskChatGPT')?.addEventListener('click',askChatGPTToReadDesk);
+
 async function loadBooks(){
   books=await query(db('books').select('*').order('created_at'));
   $('books').replaceChildren();

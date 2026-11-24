@@ -1,28 +1,32 @@
 # ChatGPT read-only connection
 
-This connection is a separate, optional interface to the Witch’s Desk. The Desk app itself is unchanged. Its MCP service exposes only read tools and uses the signed-in Supabase user’s access token for every query; the existing `witches_desk` row-level security policies decide which rows can be returned. The function makes `GET` requests only and has no write, restore, or delete tools.
+The Witch’s Desk can share a temporary, read-only connection with ChatGPT. Jess starts it by choosing **Ask ChatGPT** in the Desk. The Desk creates a random 256-bit capability that expires after 30 minutes. The Edge Function stores only its SHA-256 hash and binds the grant to the Desk account authenticated at the time of handoff. The raw capability is never stored in browser storage.
 
-## Contents
+The handoff contains only the request ID and capability; it does not include manuscript content. ChatGPT uses those values in its reader tool calls. The server verifies the grant on every call, then makes fixed read-only queries constrained to that grant’s `owner_id`. It does not accept write actions. The legacy OAuth bearer-token path remains available for compatibility with older installations.
 
-- `oauth-consent.html` is the Supabase OAuth consent and sign-in page. It does not alter the Desk editor or its saved drafts.
-- `supabase/functions/witches-desk-reader/index.ts` is the read-only MCP endpoint. It validates the bearer token with Supabase Auth and queries only the approved `witches_desk` tables.
-- `plugin/witches-desk-reader/` is the private ChatGPT plugin package.
+## Reader tools
 
-The plugin can list manuscript metadata and outlines, read one selected scene, and list notes, characters, and worldbuilding. It cannot write manuscript or planning data. Scene text is returned to ChatGPT only when Jess asks for that scene. The connector does not send writing to a dictionary or search provider.
+- `list_manuscripts` returns titles and brief metadata.
+- `get_manuscript_outline` returns chapter and scene titles and IDs.
+- `read_chapter` returns one selected chapter’s scenes, capped at 50,000 characters per request.
+- `read_scene` returns one selected scene, capped at 50,000 characters.
+- `list_characters`, `list_notes`, `list_worldbuilding`, and `list_world_entry_links` return only requested planning records.
 
-## Supabase OAuth setup required
+The connector does not save, edit, restore, or delete manuscript data. Text is sent to ChatGPT only when a user asks it to retrieve that material. The connector does not send writing to a dictionary or other lookup service.
 
-Supabase OAuth Server is a separate project setting and must be enabled by the project owner before ChatGPT can connect. The consent page needs to be published with the Desk before setting the authorization path.
+## Database and function setup
 
-1. In Supabase, open **Authentication → OAuth Server** and enable OAuth 2.1.
-2. Keep the existing Desk Site URL. Set the authorization path to `/oauth-consent.html` so sign-in and consent use the Desk’s own published page.
-3. Enable dynamic client registration for ChatGPT’s OAuth client. Supabase warns that this permits MCP clients to register; the consent page therefore displays the requesting client name, redirect URI, and scopes, and requires a user decision. Jess should approve only a request that is clearly the Witch’s Desk Reader in ChatGPT.
-4. Add the published page to the Auth redirect allow list if Supabase requests it. Do not change the project’s signing keys, existing sign-in providers, or row-level security policies for this connector.
-5. Publish the Edge Function `witches-desk-reader` with JWT gateway verification disabled. The function performs its own Supabase Auth user check and returns `401` otherwise. It uses the project’s publishable/anon key and the caller’s bearer token; it never uses the service-role key.
-6. Install the private plugin in Jess’s ChatGPT account and complete its OAuth connection by signing into her Desk account and approving the read-only request.
+Apply `supabase/migrations/20261118000000_witches_desk_reader_grants.sql` before deploying the updated `witches-desk-reader` Edge Function. The migration creates a private grants table with RLS enabled and access restricted to `service_role`. The Edge Function uses the platform-provided `SUPABASE_SERVICE_ROLE_KEY` only on the server, for grant validation and owner-filtered GET requests. Never place that key in the Desk app, plugin package, or browser configuration.
 
-The Edge Function requires the platform-provided `SUPABASE_URL` and either `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY` runtime value. Neither value is a service-role secret.
+The function also validates the Desk session through Supabase Auth before creating a grant. It continues to support the legacy OAuth path for existing clients. No Supabase OAuth setting, signing key, provider, or existing row-level-security policy needs to be changed for this handoff.
 
-## Data handling
+## Make the plugin searchable for Jess
 
-The only content returned to ChatGPT is what Jess asks the reader to retrieve. The service does not persist a copy, modify Desk records, or call an external dictionary/search service. Supabase OAuth user tokens have the existing authenticated role, so the MCP server enforces read-only behavior by exposing only fixed read tools and issuing only `GET` requests; row ownership remains enforced by Supabase RLS.
+The plugin currently uses private, invited-user access. That does not put it in Jess’s plugin search. In the plugin’s **Share plugin** settings, change **Who has access** to **Visible in the Black Stag workspace directory**. Workspace admins must allow **Publish plugins to workspace** for the plugin owner’s role. This makes the plugin discoverable to eligible Black Stag workspace members; it does not publish it to the public directory. Members still need to install it, and each handoff remains bound to the Desk account that created it.
+
+## Source files
+
+- `app.js`, `index.html`, and `styles.css` add the desktop and mobile handoff control without changing autosave or draft recovery.
+- `supabase/functions/witches-desk-reader/index.ts` implements grants and read-only tools.
+- `supabase/migrations/20261118000000_witches_desk_reader_grants.sql` creates the isolated grant table.
+- `plugin/witches-desk-reader/` contains the ChatGPT tool package and reader instructions.
